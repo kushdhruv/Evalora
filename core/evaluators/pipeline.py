@@ -1,7 +1,7 @@
 """core/evaluators/pipeline.py: Gated 4-Layer Evaluator Pipeline Orchestrator."""
 
 import asyncio
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from core.evaluators.base import BaseEvaluator
 from core.evaluators.deterministic import DeterministicEvaluator
 from core.evaluators.llm_judge import LLMJudgeEvaluator
