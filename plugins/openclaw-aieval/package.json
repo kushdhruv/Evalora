@@ -1,0 +1,25 @@
+{
+  "name": "@openclaw/plugin-aieval",
+  "version": "1.0.0",
+  "description": "OpenClaw plugin for agent telemetry, causal DAG analysis, and regression gating via Ai_EvalGod platform",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "agent-evaluation",
+    "opentelemetry",
+    "root-cause-analysis",
+    "trajectory-dag",
+    "agent-health"
+  ],
+  "author": "Antigravity AI Systems",
+  "license": "Apache-2.0",
+  "openclaw": {
+    "extensions": ["./index.js"],
+    "manifest": "./openclaw.plugin.json"
+  }
+}

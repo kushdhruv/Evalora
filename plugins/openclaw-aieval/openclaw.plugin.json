@@ -1,0 +1,67 @@
+{
+  "$schema": "https://docs.openclaw.ai/schemas/plugin.json",
+  "id": "openclaw-aieval",
+  "name": "AI EvalGod Observability & Causal Analysis",
+  "description": "Framework-agnostic OpenTelemetry tracing, causal trajectory DAG reconstruction, root-cause blame attribution, and regression quality gating for OpenClaw agents.",
+  "version": "1.0.0",
+  "author": "Antigravity AI Systems",
+  "license": "Apache-2.0",
+  "entry": "./index.js",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "endpoint": {
+        "type": "string",
+        "default": "http://localhost:8000",
+        "description": "Base URL of the running Ai_EvalGod evaluation and observability server"
+      },
+      "agentId": {
+        "type": "string",
+        "default": "openclaw_agent",
+        "description": "Identifier for the active OpenClaw agent instance"
+      },
+      "agentVersion": {
+        "type": "string",
+        "default": "1.0.0",
+        "description": "Semantic version of the active OpenClaw agent"
+      },
+      "autoTrace": {
+        "type": "boolean",
+        "default": true,
+        "description": "Automatically capture and export OpenTelemetry spans for all agent tool calls and messages"
+      },
+      "minScoreThreshold": {
+        "type": "number",
+        "default": 0.85,
+        "description": "Minimum acceptable trajectory score for CI/CD regression gates"
+      }
+    },
+    "required": ["endpoint"]
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "aieval_get_health",
+        "description": "Retrieve live agent health metrics, success rates, latency, token spend, and tool usage frequencies."
+      },
+      {
+        "name": "aieval_analyze_root_cause",
+        "description": "Analyze an agent execution trace, reconstruct its causal trajectory DAG, and pinpoint the primary root cause behind cascading errors."
+      },
+      {
+        "name": "aieval_compare_golden_path",
+        "description": "Compare an agent execution tool sequence against an expected golden path benchmark."
+      },
+      {
+        "name": "aieval_gate_check",
+        "description": "Evaluate an agent experiment against baseline regression datasets and enforce a PASS / BLOCK CI gate."
+      }
+    ],
+    "hooks": [
+      "before_tool_call",
+      "after_tool_call",
+      "on_agent_finish",
+      "on_agent_error"
+    ]
+  }
+}
