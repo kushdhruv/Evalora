@@ -66,7 +66,10 @@ async def serve_root():
     index_path = os.path.join(WEB_DIST_DIR, "index.html")
     if os.path.exists(index_path):
         with open(index_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            return HTMLResponse(
+                content=f.read(),
+                headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"},
+            )
     return RedirectResponse(url="/legacy-dashboard")
 
 

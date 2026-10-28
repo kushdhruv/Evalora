@@ -9,6 +9,8 @@ import {
   Search,
   Sun,
   Moon,
+  Home,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 import type { HealthSummary, Trajectory, TrajectoryDetailResponse, TrajectoryNode } from './types';
@@ -19,6 +21,7 @@ import { GoldenPathComparator } from './components/comparison/GoldenPathComparat
 import { InspectorDrawer } from './components/trajectory/InspectorDrawer';
 import { HealthKPIStrip } from './components/dashboard/HealthKPIStrip';
 import { LiveAgentRunner } from './components/studio/LiveAgentRunner';
+import { LandingPage } from './components/home/LandingPage';
 
 export function App() {
   const [trajectories, setTrajectories] = useState<Trajectory[]>([]);
@@ -32,6 +35,21 @@ export function App() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'failed' | 'passed'>('all');
   const [autoSync, setAutoSync] = useState<boolean>(true);
   const [_isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Page Routing State (Homepage vs Studio)
+  const [page, setPage] = useState<'home' | 'studio'>(() => {
+    if (window.location.hash === '#studio') return 'studio';
+    return 'home';
+  });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#studio') setPage('studio');
+      else if (window.location.hash === '#home') setPage('home');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Clean Theme Toggle State
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -120,11 +138,48 @@ export function App() {
     return true;
   });
 
+  // Render Homepage if active
+  if (page === 'home') {
+    return (
+      <LandingPage
+        theme={theme}
+        onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        onLaunchStudio={() => {
+          setPage('studio');
+          window.location.hash = '#studio';
+        }}
+        healthSummary={healthSummary}
+      />
+    );
+  }
+
+  // Render Full Observability Studio
   return (
     <div className="app-container">
       {/* 1. Topbar */}
       <header className="topbar">
         <div className="brand-section">
+          {/* Page Switcher Pill */}
+          <div style={{ display: 'flex', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: 2 }}>
+            <button
+              onClick={() => {
+                setPage('home');
+                window.location.hash = '#home';
+              }}
+              className="view-btn"
+              style={{ padding: '3px 8px', fontSize: 11 }}
+              title="Return to 3D Homepage Overview"
+            >
+              <Home size={12} /> Overview
+            </button>
+            <button
+              className="view-btn active"
+              style={{ padding: '3px 8px', fontSize: 11 }}
+            >
+              <SlidersHorizontal size={12} /> Studio
+            </button>
+          </div>
+
           <div className="brand-badge">EVALORA</div>
           <div>
             <div className="brand-title">Agent Observability & Causal Evaluation</div>
