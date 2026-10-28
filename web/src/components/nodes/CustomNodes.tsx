@@ -1,4 +1,4 @@
-// web/src/components/nodes/CustomNodes.tsx - Custom React Flow Node Components
+// web/src/components/nodes/CustomNodes.tsx - Clean Minimalistic Phonic Node Components
 
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
@@ -10,10 +10,8 @@ import {
   AlertOctagon,
   Clock,
   Coins,
-  AlertTriangle,
-  RotateCcw,
 } from 'lucide-react';
-import { TrajectoryNode } from '../../types';
+import type { TrajectoryNode } from '../../types';
 
 interface NodeData {
   node: TrajectoryNode;
@@ -30,49 +28,65 @@ export function PlanNode({ data }: { data: NodeData }) {
     <div
       style={{
         width: 240,
-        background: '#131b2c',
-        border: `1.5px solid ${isRootCause ? '#f43f5e' : isSelected ? '#3b82f6' : '#2a3852'}`,
-        borderRadius: 8,
+        background: 'var(--node-bg)',
+        border: `1px solid ${
+          isRootCause
+            ? 'var(--rose)'
+            : isSelected
+            ? 'var(--border-focus)'
+            : 'var(--border-subtle)'
+        }`,
+        borderRadius: 'var(--radius-md)',
         padding: '10px 12px',
-        color: '#f8fafc',
+        color: 'var(--text-primary)',
         boxShadow: isRootCause
-          ? '0 0 16px rgba(244, 63, 94, 0.45)'
+          ? '0 0 0 1.5px var(--rose), 0 2px 8px var(--rose-glow)'
           : isSelected
-          ? '0 0 14px rgba(59, 130, 246, 0.35)'
-          : '0 4px 10px rgba(0,0,0,0.3)',
+          ? '0 0 0 1.5px var(--border-focus), var(--node-shadow)'
+          : 'var(--node-shadow)',
+        transition: 'all 0.15s ease',
       }}
       className={isRootCause ? 'root-cause-glow' : ''}
     >
-      <Handle type="target" position={Position.Top} style={{ background: '#3b82f6' }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: 'var(--text-muted)', border: 'none', width: 6, height: 6 }}
+      />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#60a5fa' }}>
-          <Compass size={14} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, fontWeight: 700, color: 'var(--blue-text)' }}>
+          <Compass size={13} />
           <span>PLAN</span>
         </div>
-        <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#94a3b8' }}>
+        <span style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
           {node.node_id}
         </span>
       </div>
-      <div style={{ fontSize: 12, fontWeight: 600, color: '#f8fafc', marginBottom: 6 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 5 }}>
         {node.label || 'Strategy Plan'}
       </div>
       {node.payload.content && (
         <div
           style={{
             fontSize: 11,
-            color: '#94a3b8',
-            maxHeight: 36,
+            color: 'var(--text-secondary)',
+            maxHeight: 34,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
+            lineHeight: 1.4,
           }}
         >
           {node.payload.content}
         </div>
       )}
-      <Handle type="source" position={Position.Bottom} style={{ background: '#3b82f6' }} />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: 'var(--text-muted)', border: 'none', width: 6, height: 6 }}
+      />
     </div>
   );
 }
@@ -88,46 +102,65 @@ export function ToolCallNode({ data }: { data: NodeData }) {
     <div
       style={{
         width: 250,
-        background: '#131b2c',
-        border: `1.5px solid ${isRootCause ? '#f43f5e' : isError ? '#f43f5e' : isSelected ? '#3b82f6' : '#2a3852'}`,
-        borderRadius: 8,
+        background: 'var(--node-bg)',
+        border: `1px solid ${
+          isRootCause
+            ? 'var(--rose)'
+            : isError
+            ? 'var(--rose-border)'
+            : isSelected
+            ? 'var(--border-focus)'
+            : 'var(--border-subtle)'
+        }`,
+        borderRadius: 'var(--radius-md)',
         padding: '10px 12px',
-        color: '#f8fafc',
+        color: 'var(--text-primary)',
         boxShadow: isRootCause
-          ? '0 0 18px rgba(244, 63, 94, 0.5)'
+          ? '0 0 0 1.5px var(--rose), 0 2px 8px var(--rose-glow)'
           : isSelected
-          ? '0 0 14px rgba(59, 130, 246, 0.35)'
-          : '0 4px 10px rgba(0,0,0,0.3)',
+          ? '0 0 0 1.5px var(--border-focus), var(--node-shadow)'
+          : 'var(--node-shadow)',
+        transition: 'all 0.15s ease',
       }}
       className={isRootCause ? 'root-cause-glow' : ''}
     >
-      <Handle type="target" position={Position.Top} style={{ background: isError ? '#f43f5e' : '#10b981' }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{
+          background: isError ? 'var(--rose)' : 'var(--emerald)',
+          border: 'none',
+          width: 6,
+          height: 6,
+        }}
+      />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#f59e0b' }}>
-          <Wrench size={14} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, fontWeight: 700, color: 'var(--amber-text)' }}>
+          <Wrench size={13} />
           <span>TOOL CALL</span>
         </div>
         {isRootCause ? (
-          <span className="badge badge-rose" style={{ fontSize: 9.5 }}>ROOT CAUSE</span>
+          <span className="badge badge-rose" style={{ fontSize: 9 }}>ROOT CAUSE</span>
         ) : isError ? (
-          <span className="badge badge-rose" style={{ fontSize: 9.5 }}>ERROR</span>
+          <span className="badge badge-rose" style={{ fontSize: 9 }}>ERROR</span>
         ) : (
-          <span className="badge badge-emerald" style={{ fontSize: 9.5 }}>OK</span>
+          <span className="badge badge-emerald" style={{ fontSize: 9 }}>OK</span>
         )}
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', marginBottom: 4, fontFamily: 'monospace' }}>
+      <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-mono)' }}>
         {toolName}()
       </div>
 
       {isError && node.payload.tool_call?.error_message && (
         <div
           style={{
-            fontSize: 10.5,
-            color: '#fb7185',
-            background: 'rgba(244, 63, 94, 0.1)',
-            padding: '3px 6px',
-            borderRadius: 4,
+            fontSize: 10,
+            color: 'var(--rose-text)',
+            background: 'var(--rose-bg)',
+            border: '1px solid var(--rose-border)',
+            padding: '2px 6px',
+            borderRadius: 'var(--radius-xs)',
             marginBottom: 6,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -138,7 +171,7 @@ export function ToolCallNode({ data }: { data: NodeData }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10.5, color: '#64748b' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           <Clock size={11} /> {duration.toFixed(1)}ms
         </span>
@@ -147,9 +180,18 @@ export function ToolCallNode({ data }: { data: NodeData }) {
             <Coins size={11} /> ${cost.toFixed(4)}
           </span>
         )}
-        <span style={{ fontFamily: 'monospace' }}>{node.node_id}</span>
+        <span style={{ fontFamily: 'var(--font-mono)' }}>{node.node_id}</span>
       </div>
-      <Handle type="source" position={Position.Bottom} style={{ background: isError ? '#f43f5e' : '#10b981' }} />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{
+          background: isError ? 'var(--rose)' : 'var(--emerald)',
+          border: 'none',
+          width: 6,
+          height: 6,
+        }}
+      />
     </div>
   );
 }
@@ -163,49 +205,64 @@ export function MemoryNode({ data }: { data: NodeData }) {
     <div
       style={{
         width: 240,
-        background: '#131b2c',
-        border: `1.5px solid ${isRootCause ? '#f43f5e' : isSelected ? '#3b82f6' : '#2a3852'}`,
-        borderRadius: 8,
+        background: 'var(--node-bg)',
+        border: `1px solid ${
+          isRootCause
+            ? 'var(--rose)'
+            : isSelected
+            ? 'var(--border-focus)'
+            : 'var(--border-subtle)'
+        }`,
+        borderRadius: 'var(--radius-md)',
         padding: '10px 12px',
-        color: '#f8fafc',
+        color: 'var(--text-primary)',
         boxShadow: isRootCause
-          ? '0 0 16px rgba(244, 63, 94, 0.45)'
+          ? '0 0 0 1.5px var(--rose), 0 2px 8px var(--rose-glow)'
           : isSelected
-          ? '0 0 14px rgba(59, 130, 246, 0.35)'
-          : '0 4px 10px rgba(0,0,0,0.3)',
+          ? '0 0 0 1.5px var(--border-focus), var(--node-shadow)'
+          : 'var(--node-shadow)',
+        transition: 'all 0.15s ease',
       }}
       className={isRootCause ? 'root-cause-glow' : ''}
     >
-      <Handle type="target" position={Position.Top} style={{ background: '#06b6d4' }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: 'var(--purple)', border: 'none', width: 6, height: 6 }}
+      />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#06b6d4' }}>
-          <Database size={14} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, fontWeight: 700, color: 'var(--purple-text)' }}>
+          <Database size={13} />
           <span>{isRead ? 'MEMORY READ' : 'MEMORY WRITE'}</span>
         </div>
-        <span className="badge badge-blue" style={{ fontSize: 9.5 }}>
+        <span className="badge badge-purple" style={{ fontSize: 9 }}>
           {mem.operation || 'query'}
         </span>
       </div>
 
-      <div style={{ fontSize: 12, fontWeight: 600, color: '#f8fafc', marginBottom: 4 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
         {node.label || 'Context Retrieval'}
       </div>
 
       {mem.retrieved_keys && mem.retrieved_keys.length > 0 && (
-        <div style={{ fontSize: 10.5, color: '#94a3b8', marginBottom: 4 }}>
+        <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 4 }}>
           Keys: {mem.retrieved_keys.slice(0, 2).join(', ')}
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10.5, color: '#64748b' }}>
-        <span>Node: {node.node_id}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
+        <span style={{ fontFamily: 'var(--font-mono)' }}>{node.node_id}</span>
         {mem.similarity_scores && mem.similarity_scores.length > 0 && (
-          <span style={{ color: '#34d399' }}>
+          <span style={{ color: 'var(--emerald-text)', fontWeight: 600 }}>
             Sim: {(mem.similarity_scores[0] * 100).toFixed(0)}%
           </span>
         )}
       </div>
-      <Handle type="source" position={Position.Bottom} style={{ background: '#06b6d4' }} />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: 'var(--purple)', border: 'none', width: 6, height: 6 }}
+      />
     </div>
   );
 }
@@ -218,35 +275,53 @@ export function OutcomeNode({ data }: { data: NodeData }) {
     <div
       style={{
         width: 260,
-        background: '#131b2c',
-        border: `1.5px solid ${isRootCause ? '#f43f5e' : isFailed ? '#f43f5e' : isSelected ? '#3b82f6' : '#2a3852'}`,
-        borderRadius: 8,
+        background: 'var(--node-bg)',
+        border: `1px solid ${
+          isRootCause
+            ? 'var(--rose)'
+            : isFailed
+            ? 'var(--rose-border)'
+            : isSelected
+            ? 'var(--border-focus)'
+            : 'var(--border-subtle)'
+        }`,
+        borderRadius: 'var(--radius-md)',
         padding: '10px 12px',
-        color: '#f8fafc',
+        color: 'var(--text-primary)',
         boxShadow: isRootCause
-          ? '0 0 18px rgba(244, 63, 94, 0.5)'
+          ? '0 0 0 1.5px var(--rose), 0 2px 8px var(--rose-glow)'
           : isSelected
-          ? '0 0 14px rgba(59, 130, 246, 0.35)'
-          : '0 4px 10px rgba(0,0,0,0.3)',
+          ? '0 0 0 1.5px var(--border-focus), var(--node-shadow)'
+          : 'var(--node-shadow)',
+        transition: 'all 0.15s ease',
       }}
       className={isRootCause ? 'root-cause-glow' : ''}
     >
-      <Handle type="target" position={Position.Top} style={{ background: isFailed ? '#f43f5e' : '#10b981' }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{
+          background: isFailed ? 'var(--rose)' : 'var(--emerald)',
+          border: 'none',
+          width: 6,
+          height: 6,
+        }}
+      />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            fontSize: 11,
+            gap: 5,
+            fontSize: 10.5,
             fontWeight: 700,
-            color: isFailed ? '#fb7185' : '#34d399',
+            color: isFailed ? 'var(--rose-text)' : 'var(--emerald-text)',
           }}
         >
-          {isFailed ? <AlertOctagon size={14} /> : <CheckCircle2 size={14} />}
+          {isFailed ? <AlertOctagon size={13} /> : <CheckCircle2 size={13} />}
           <span>FINAL OUTCOME</span>
         </div>
-        <span className={`badge ${isFailed ? 'badge-rose' : 'badge-emerald'}`} style={{ fontSize: 9.5 }}>
+        <span className={`badge ${isFailed ? 'badge-rose' : 'badge-emerald'}`} style={{ fontSize: 9 }}>
           {isFailed ? 'FAILED' : 'SUCCESS'}
         </span>
       </div>
@@ -255,24 +330,25 @@ export function OutcomeNode({ data }: { data: NodeData }) {
         <div
           style={{
             fontSize: 11,
-            color: '#cbd5e1',
-            maxHeight: 48,
+            color: 'var(--text-secondary)',
+            maxHeight: 46,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             display: '-webkit-box',
             WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
             marginBottom: 6,
+            lineHeight: 1.4,
           }}
         >
           "{node.payload.content}"
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10.5, color: '#64748b' }}>
-        <span>Node: {node.node_id}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
+        <span style={{ fontFamily: 'var(--font-mono)' }}>{node.node_id}</span>
         {evaluationScore !== undefined && (
-          <span style={{ fontWeight: 600, color: evaluationScore >= 0.85 ? '#34d399' : '#fb7185' }}>
+          <span style={{ fontWeight: 600, color: evaluationScore >= 0.85 ? 'var(--emerald-text)' : 'var(--rose-text)' }}>
             Score: {(evaluationScore * 100).toFixed(0)}%
           </span>
         )}

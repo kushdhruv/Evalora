@@ -1,8 +1,7 @@
-// web/src/components/trajectory/TimelineWaterfall.tsx - New Relic Inspired Span Duration Waterfall View
+// web/src/components/trajectory/TimelineWaterfall.tsx - Minimalistic Phonic Span Duration Waterfall View
 
 import React, { useMemo } from 'react';
-import { Clock, AlertTriangle, AlertCircle } from 'lucide-react';
-import { TrajectoryDetailResponse, TrajectoryNode } from '../../types';
+import type { TrajectoryDetailResponse, TrajectoryNode } from '../../types';
 
 interface TimelineWaterfallProps {
   detail: TrajectoryDetailResponse;
@@ -40,34 +39,35 @@ export function TimelineWaterfall({ detail, selectedNodeId, onSelectNode }: Time
   }, [trajectory]);
 
   return (
-    <div style={{ padding: 18, height: '100%', overflowY: 'auto', background: '#07090e' }}>
+    <div style={{ padding: 18, height: '100%', overflowY: 'auto', background: 'var(--bg-canvas)' }}>
       {/* Waterfall Header Summary */}
       <div
         style={{
-          background: '#0e131d',
-          border: '1px solid #1c2638',
-          borderRadius: 8,
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-md)',
           padding: '12px 16px',
           marginBottom: 16,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          boxShadow: 'var(--card-shadow)',
         }}
       >
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
             Span Execution Waterfall
           </div>
-          <div style={{ fontSize: 11, color: '#94a3b8' }}>
-            Microsecond duration distribution across {trajectory.nodes.length} agent steps
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+            Sub-millisecond duration distribution across {trajectory.nodes.length} agent steps
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Total Latency
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, fontFamily: 'monospace', color: '#60a5fa' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
               {totalDurationMs.toFixed(1)} ms
             </div>
           </div>
@@ -80,9 +80,9 @@ export function TimelineWaterfall({ detail, selectedNodeId, onSelectNode }: Time
           display: 'flex',
           justifyContent: 'space-between',
           fontSize: 10,
-          fontFamily: 'monospace',
-          color: '#64748b',
-          borderBottom: '1px solid #1c2638',
+          fontFamily: 'var(--font-mono)',
+          color: 'var(--text-muted)',
+          borderBottom: '1px solid var(--border-subtle)',
           paddingBottom: 6,
           marginBottom: 12,
         }}
@@ -95,44 +95,51 @@ export function TimelineWaterfall({ detail, selectedNodeId, onSelectNode }: Time
       </div>
 
       {/* Waterfall Span Rows */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         {sortedNodes.map((item, idx) => {
           const isSelected = item.node_id === selectedNodeId;
           const isError = failureNodeIds.has(item.node_id) || item.payload.tool_call?.is_error;
           const isRoot = item.node_id === rootCauseNodeId;
 
           const leftPercent = (item.computedOffset / totalDurationMs) * 100;
-          const widthPercent = Math.max(4, (item.computedDuration / totalDurationMs) * 100);
+          const widthPercent = Math.max(3, (item.computedDuration / totalDurationMs) * 100);
 
-          let barColor = '#3b82f6';
-          if (item.event_type === 'tool_call') barColor = isError ? '#f43f5e' : '#f59e0b';
-          else if (item.event_type.startsWith('memory')) barColor = '#06b6d4';
-          else if (item.event_type === 'final_outcome') barColor = isError ? '#f43f5e' : '#10b981';
+          let barColor = 'var(--text-muted)';
+          if (item.event_type === 'tool_call') barColor = isError ? 'var(--rose)' : 'var(--amber)';
+          else if (item.event_type.startsWith('memory')) barColor = 'var(--purple)';
+          else if (item.event_type === 'final_outcome') barColor = isError ? 'var(--rose)' : 'var(--emerald)';
 
           return (
             <div
               key={item.node_id}
               onClick={() => onSelectNode(item)}
               style={{
-                background: isSelected ? '#1b263b' : '#0e131d',
-                border: `1px solid ${isRoot ? '#f43f5e' : isSelected ? '#3b82f6' : '#1c2638'}`,
-                borderRadius: 6,
+                background: isSelected ? 'var(--bg-elevated)' : 'var(--bg-surface)',
+                border: `1px solid ${
+                  isRoot
+                    ? 'var(--rose)'
+                    : isSelected
+                    ? 'var(--border-focus)'
+                    : 'var(--border-subtle)'
+                }`,
+                borderRadius: 'var(--radius-sm)',
                 padding: '8px 12px',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                transition: 'all 0.12s ease',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 6,
+                boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.08)' : undefined,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span
                     style={{
-                      fontFamily: 'monospace',
+                      fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      color: '#64748b',
-                      width: 18,
+                      color: 'var(--text-muted)',
+                      width: 20,
                     }}
                   >
                     #{idx + 1}
@@ -148,21 +155,21 @@ export function TimelineWaterfall({ detail, selectedNodeId, onSelectNode }: Time
                           ? 'badge-rose'
                           : 'badge-emerald'
                         : item.event_type.startsWith('memory')
-                        ? 'badge-blue'
+                        ? 'badge-purple'
                         : 'badge-muted'
                     }`}
-                    style={{ fontSize: 9.5 }}
+                    style={{ fontSize: 9 }}
                   >
                     {item.event_type.toUpperCase()}
                   </span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#f8fafc' }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
                     {item.label}
                   </span>
-                  {isRoot && <span className="badge badge-rose">ROOT CAUSE FAULT</span>}
+                  {isRoot && <span className="badge badge-rose">ROOT CAUSE</span>}
                   {isError && !isRoot && <span className="badge badge-rose">ERROR</span>}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, fontFamily: 'monospace', color: '#94a3b8' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
                   <span>{item.computedDuration.toFixed(1)} ms</span>
                 </div>
               </div>
@@ -170,9 +177,9 @@ export function TimelineWaterfall({ detail, selectedNodeId, onSelectNode }: Time
               {/* Relative Timeline Bar */}
               <div
                 style={{
-                  height: 6,
+                  height: 5,
                   width: '100%',
-                  background: '#07090e',
+                  background: 'var(--bg-canvas)',
                   borderRadius: 3,
                   position: 'relative',
                   overflow: 'hidden',
@@ -186,7 +193,6 @@ export function TimelineWaterfall({ detail, selectedNodeId, onSelectNode }: Time
                     height: '100%',
                     background: barColor,
                     borderRadius: 3,
-                    boxShadow: isRoot ? '0 0 8px #f43f5e' : undefined,
                   }}
                 />
               </div>

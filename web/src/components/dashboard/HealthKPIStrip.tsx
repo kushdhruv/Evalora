@@ -1,8 +1,8 @@
-// web/src/components/dashboard/HealthKPIStrip.tsx - Fleet Health KPI Metrics Strip
+// web/src/components/dashboard/HealthKPIStrip.tsx - Clean Minimalist Fleet Health KPI Metrics Strip
 
 import React from 'react';
-import { Activity, Clock, ShieldCheck, DollarSign, Wrench, AlertTriangle } from 'lucide-react';
-import { HealthSummary } from '../../types';
+import { Clock, ShieldCheck, DollarSign, Wrench, AlertTriangle } from 'lucide-react';
+import type { HealthSummary } from '../../types';
 
 interface HealthKPIStripProps {
   summary: HealthSummary | null;
@@ -21,9 +21,9 @@ export function HealthKPIStrip({ summary }: HealthKPIStripProps) {
       <div className="kpi-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span className="kpi-label">Fleet Success</span>
-          <ShieldCheck size={14} color={Number(successPct) >= 80 ? '#10b981' : '#f59e0b'} />
+          <ShieldCheck size={13} color={Number(successPct) >= 80 ? 'var(--emerald-text)' : 'var(--amber-text)'} />
         </div>
-        <div className="kpi-value" style={{ color: Number(successPct) >= 80 ? '#34d399' : '#fbbf24' }}>
+        <div className="kpi-value" style={{ color: Number(successPct) >= 80 ? 'var(--emerald-text)' : 'var(--amber-text)' }}>
           {successPct}%
         </div>
         <span className="kpi-subtext">Across {summary.total_trajectories} recorded traces</span>
@@ -33,9 +33,9 @@ export function HealthKPIStrip({ summary }: HealthKPIStripProps) {
       <div className="kpi-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span className="kpi-label">Avg / p95 Latency</span>
-          <Clock size={14} color="#3b82f6" />
+          <Clock size={13} color="var(--text-muted)" />
         </div>
-        <div className="kpi-value" style={{ color: '#60a5fa' }}>
+        <div className="kpi-value">
           {summary.avg_latency_ms.toFixed(1)} ms
         </div>
         <span className="kpi-subtext">
@@ -47,26 +47,26 @@ export function HealthKPIStrip({ summary }: HealthKPIStripProps) {
       <div className="kpi-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span className="kpi-label">Fleet Spend</span>
-          <DollarSign size={14} color="#10b981" />
+          <DollarSign size={13} color="var(--text-muted)" />
         </div>
-        <div className="kpi-value" style={{ color: '#34d399' }}>
+        <div className="kpi-value">
           ${summary.total_cost_usd.toFixed(4)}
         </div>
-        <span className="kpi-subtext">Zero-cost local judge active</span>
+        <span className="kpi-subtext">Zero-cost local runtime judge</span>
       </div>
 
       {/* 4. Failure Categorization */}
       <div className="kpi-card" style={{ gridColumn: 'span 2' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
           <span className="kpi-label">Failure Breakdown</span>
-          <AlertTriangle size={13} color="#f43f5e" />
+          <AlertTriangle size={12} color="var(--rose-text)" />
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 4 }}>
           {failureEntries.length === 0 ? (
-            <span style={{ fontSize: 11, color: '#34d399', fontWeight: 500 }}>Zero failures detected across fleet</span>
+            <span style={{ fontSize: 11, color: 'var(--emerald-text)', fontWeight: 500 }}>Zero failures detected across fleet</span>
           ) : (
             failureEntries.map(([cat, count]) => (
-              <span key={cat} className="badge badge-rose" style={{ fontSize: 10 }}>
+              <span key={cat} className="badge badge-rose" style={{ fontSize: 9.5 }}>
                 {cat}: {count}
               </span>
             ))
@@ -78,14 +78,14 @@ export function HealthKPIStrip({ summary }: HealthKPIStripProps) {
       <div className="kpi-card" style={{ gridColumn: 'span 2' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
           <span className="kpi-label">Active Tool Volumes</span>
-          <Wrench size={13} color="#f59e0b" />
+          <Wrench size={12} color="var(--text-muted)" />
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 4 }}>
           {toolEntries.length === 0 ? (
-            <span style={{ fontSize: 11, color: '#64748b' }}>No tools recorded</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>No tools recorded</span>
           ) : (
             toolEntries.map(([tool, count]) => (
-              <span key={tool} className="badge badge-amber" style={{ fontSize: 10, fontFamily: 'monospace' }}>
+              <span key={tool} className="badge badge-muted" style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)' }}>
                 {tool}: {count}
               </span>
             ))

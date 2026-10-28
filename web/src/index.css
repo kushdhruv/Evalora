@@ -1,62 +1,165 @@
-/* web/src/index.css - Evalora Engineering Design System (Vanilla CSS) */
+/* web/src/index.css - Evalora Phonic Clean Minimalistic Design System (Vanilla CSS) */
 
-:root {
-  --bg-canvas: #07090e;
-  --bg-surface: #0e131d;
-  --bg-elevated: #141c2c;
-  --bg-hover: #1b263b;
-  --bg-active: #22314d;
-  
-  --border-subtle: #1c2638;
-  --border-strong: #2a3852;
-  --border-focus: #3b82f6;
+/* -----------------------------------------------------------------------------
+   Theme Tokens: Phonic Minimalist Architecture (Matte Studio)
+----------------------------------------------------------------------------- */
 
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-inverse: #07090e;
+:root,
+[data-theme="dark"] {
+  --theme-name: "dark";
 
-  /* Semantic status colors */
+  /* Neutral Graphite & Obsidian Surfaces (Zero oversaturated cyan/blue) */
+  --bg-canvas: #090a0c;
+  --bg-surface: #111215;
+  --bg-elevated: #18191d;
+  --bg-hover: #202227;
+  --bg-active: #292b32;
+
+  /* Hairline Precision Borders */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-focus: #e4e4e7;
+
+  /* High-Legibility Typography */
+  --text-primary: #f4f4f6;
+  --text-secondary: #94979e;
+  --text-muted: #60646c;
+  --text-inverse: #090a0c;
+
+  /* Monochromatic Core Accents */
+  --accent-primary: #ededef;
+  --accent-primary-text: #090a0c;
+  --accent-primary-hover: #ffffff;
+
+  /* Semantic Precision Accents (Restrained Studio Instrument Tones) */
   --emerald: #10b981;
-  --emerald-bg: rgba(16, 185, 129, 0.12);
-  --emerald-border: rgba(16, 185, 129, 0.3);
+  --emerald-text: #34d399;
+  --emerald-bg: rgba(16, 185, 129, 0.1);
+  --emerald-border: rgba(16, 185, 129, 0.25);
 
   --rose: #f43f5e;
-  --rose-bg: rgba(244, 63, 94, 0.12);
-  --rose-border: rgba(244, 63, 94, 0.35);
-  --rose-glow: rgba(244, 63, 94, 0.4);
+  --rose-text: #fb7185;
+  --rose-bg: rgba(244, 63, 94, 0.1);
+  --rose-border: rgba(244, 63, 94, 0.3);
+  --rose-glow: rgba(244, 63, 94, 0.25);
 
   --amber: #f59e0b;
-  --amber-bg: rgba(245, 158, 11, 0.12);
-  --amber-border: rgba(245, 158, 11, 0.3);
+  --amber-text: #fbbf24;
+  --amber-bg: rgba(245, 158, 11, 0.1);
+  --amber-border: rgba(245, 158, 11, 0.25);
 
-  --blue: #3b82f6;
-  --blue-bg: rgba(59, 130, 246, 0.12);
-  --blue-border: rgba(59, 130, 246, 0.35);
+  --blue: #38bdf8;
+  --blue-text: #38bdf8;
+  --blue-bg: rgba(56, 189, 248, 0.09);
+  --blue-border: rgba(56, 189, 248, 0.25);
 
-  --purple: #a855f7;
-  --purple-bg: rgba(168, 85, 247, 0.12);
-  --purple-border: rgba(168, 85, 247, 0.3);
+  --purple: #a78bfa;
+  --purple-text: #c084fc;
+  --purple-bg: rgba(167, 139, 250, 0.09);
+  --purple-border: rgba(167, 139, 250, 0.25);
 
-  --cyan: #06b6d4;
-  --cyan-bg: rgba(6, 182, 212, 0.12);
-  --cyan-border: rgba(6, 182, 212, 0.3);
+  /* Component Shadows & Overlays */
+  --node-bg: #131417;
+  --node-border: rgba(255, 255, 255, 0.1);
+  --node-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --canvas-dot: #1f2126;
+  --canvas-mask: rgba(9, 10, 12, 0.75);
+  --edge-stroke: #2e3138;
+  --edge-arrow: #494e57;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --code-bg: #0c0d10;
+}
 
+[data-theme="light"] {
+  --theme-name: "light";
+
+  /* Warm Studio Chalk & Paper Surfaces */
+  --bg-canvas: #f6f7f9;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f0f2f5;
+  --bg-hover: #e5e8ee;
+  --bg-active: #dadee6;
+
+  /* Hairline Precision Borders */
+  --border-subtle: #e2e5ec;
+  --border-strong: #cfd4dd;
+  --border-focus: #18181b;
+
+  /* High-Legibility Typography */
+  --text-primary: #111215;
+  --text-secondary: #555962;
+  --text-muted: #858b95;
+  --text-inverse: #ffffff;
+
+  /* Monochromatic Core Accents */
+  --accent-primary: #111215;
+  --accent-primary-text: #ffffff;
+  --accent-primary-hover: #27272a;
+
+  /* Semantic Precision Accents */
+  --emerald: #059669;
+  --emerald-text: #059669;
+  --emerald-bg: rgba(5, 150, 105, 0.08);
+  --emerald-border: rgba(5, 150, 105, 0.22);
+
+  --rose: #e11d48;
+  --rose-text: #e11d48;
+  --rose-bg: rgba(225, 29, 72, 0.08);
+  --rose-border: rgba(225, 29, 72, 0.22);
+  --rose-glow: rgba(225, 29, 72, 0.15);
+
+  --amber: #d97706;
+  --amber-text: #d97706;
+  --amber-bg: rgba(217, 119, 6, 0.08);
+  --amber-border: rgba(217, 119, 6, 0.22);
+
+  --blue: #0284c7;
+  --blue-text: #0284c7;
+  --blue-bg: rgba(2, 132, 199, 0.08);
+  --blue-border: rgba(2, 132, 199, 0.22);
+
+  --purple: #7c3aed;
+  --purple-text: #7c3aed;
+  --purple-bg: rgba(124, 58, 237, 0.08);
+  --purple-border: rgba(124, 58, 237, 0.22);
+
+  /* Component Shadows & Overlays */
+  --node-bg: #ffffff;
+  --node-border: #e2e5eb;
+  --node-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 1px #e2e5eb;
+  --canvas-dot: #d8dce4;
+  --canvas-mask: rgba(246, 247, 249, 0.75);
+  --edge-stroke: #cbd2dc;
+  --edge-arrow: #9ca3af;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --code-bg: #f0f2f5;
+}
+
+:root {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Geist", Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, monospace;
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 9px;
   --radius-xl: 12px;
 
-  --header-height: 56px;
+  --header-height: 52px;
 }
+
+/* -----------------------------------------------------------------------------
+   Global Reset & Defaults
+----------------------------------------------------------------------------- */
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html, body {
+  height: 100%;
 }
 
 body {
@@ -67,17 +170,17 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  min-height: 100vh;
+  overflow: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-canvas);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-strong);
@@ -87,12 +190,16 @@ body {
   background: var(--text-muted);
 }
 
-/* App Shell Layout */
+/* -----------------------------------------------------------------------------
+   App Layout Shell
+----------------------------------------------------------------------------- */
+
 .app-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  background: var(--bg-canvas);
 }
 
 .topbar {
@@ -105,6 +212,7 @@ body {
   padding: 0 18px;
   z-index: 20;
   flex-shrink: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .brand-section {
@@ -114,25 +222,26 @@ body {
 }
 
 .brand-badge {
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  color: white;
+  background: var(--accent-primary);
+  color: var(--accent-primary-text);
   font-weight: 800;
-  font-size: 13px;
+  font-size: 11.5px;
   padding: 3px 8px;
   border-radius: var(--radius-sm);
-  letter-spacing: 0.05em;
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 .brand-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
   letter-spacing: -0.01em;
 }
 
 .brand-subtitle {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
 }
 
@@ -142,7 +251,10 @@ body {
   overflow: hidden;
 }
 
-/* Left Sidebar - Trajectory List */
+/* -----------------------------------------------------------------------------
+   Left Sidebar - Trajectory List
+----------------------------------------------------------------------------- */
+
 .sidebar-panel {
   width: 320px;
   background: var(--bg-surface);
@@ -151,10 +263,11 @@ body {
   flex-direction: column;
   flex-shrink: 0;
   overflow: hidden;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .sidebar-header {
-  padding: 12px 14px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -162,10 +275,9 @@ body {
 }
 
 .sidebar-title {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--text-secondary);
 }
 
@@ -176,16 +288,16 @@ body {
 }
 
 .trajectory-card {
-  padding: 10px 12px;
+  padding: 9px 11px;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   transition: all 0.15s ease;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .trajectory-card:hover {
@@ -195,8 +307,8 @@ body {
 
 .trajectory-card.active {
   background: var(--bg-elevated);
-  border-color: var(--blue-border);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+  border-color: var(--border-strong);
+  box-shadow: var(--card-shadow);
 }
 
 .traj-card-top {
@@ -213,7 +325,7 @@ body {
 }
 
 .traj-goal {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -223,12 +335,15 @@ body {
 .traj-meta-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 11px;
+  gap: 8px;
+  font-size: 10.5px;
   color: var(--text-muted);
 }
 
-/* Center Workspace */
+/* -----------------------------------------------------------------------------
+   Center Workspace
+----------------------------------------------------------------------------- */
+
 .workspace-panel {
   flex: 1;
   display: flex;
@@ -236,16 +351,18 @@ body {
   overflow: hidden;
   background: var(--bg-canvas);
   position: relative;
+  transition: background-color 0.2s ease;
 }
 
 .workspace-header {
-  padding: 10px 18px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface);
   display: flex;
   align-items: center;
   justify-content: space-between;
   z-index: 10;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .workspace-actions {
@@ -264,8 +381,8 @@ body {
 }
 
 .view-btn {
-  padding: 5px 12px;
-  font-size: 12px;
+  padding: 4px 10px;
+  font-size: 11.5px;
   font-weight: 500;
   color: var(--text-secondary);
   background: transparent;
@@ -274,7 +391,7 @@ body {
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   transition: all 0.12s ease;
 }
 
@@ -283,9 +400,9 @@ body {
 }
 
 .view-btn.active {
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
   color: var(--text-primary);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 /* Canvas View Container */
@@ -295,6 +412,7 @@ body {
   height: 100%;
   position: relative;
   overflow: hidden;
+  background: var(--bg-canvas);
 }
 
 /* React Flow Canvas Overrides */
@@ -306,7 +424,7 @@ body {
   background: var(--bg-surface) !important;
   border: 1px solid var(--border-subtle) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: var(--card-shadow) !important;
 }
 
 .react-flow__controls-button {
@@ -328,7 +446,10 @@ body {
   border-radius: var(--radius-md) !important;
 }
 
-/* Right Inspector Drawer */
+/* -----------------------------------------------------------------------------
+   Right Inspector Drawer
+----------------------------------------------------------------------------- */
+
 .inspector-panel {
   width: 380px;
   background: var(--bg-surface);
@@ -338,10 +459,11 @@ body {
   overflow: hidden;
   flex-shrink: 0;
   z-index: 15;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .inspector-header {
-  padding: 12px 16px;
+  padding: 11px 16px;
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -351,45 +473,51 @@ body {
 .inspector-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
-/* KPI Overview Strip */
+/* -----------------------------------------------------------------------------
+   KPI Overview Strip
+----------------------------------------------------------------------------- */
+
 .kpi-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  padding: 14px 18px;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 10px;
+  padding: 10px 18px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .kpi-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 10px 14px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  transition: all 0.15s ease;
 }
 
 .kpi-label {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .kpi-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   font-family: var(--font-mono);
   color: var(--text-primary);
+  line-height: 1.2;
 }
 
 .kpi-subtext {
@@ -397,28 +525,34 @@ body {
   color: var(--text-secondary);
 }
 
-/* Buttons */
+/* -----------------------------------------------------------------------------
+   Interactive Buttons (Clean Minimalist)
+----------------------------------------------------------------------------- */
+
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 11.5px;
   font-weight: 500;
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.15s ease;
   user-select: none;
+  font-family: var(--font-sans);
 }
 
 .btn-primary {
-  background: var(--blue);
-  color: white;
+  background: var(--accent-primary);
+  color: var(--accent-primary-text);
+  border-color: var(--accent-primary);
 }
 .btn-primary:hover {
-  background: #2563eb;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+  background: var(--accent-primary-hover);
+  border-color: var(--accent-primary-hover);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary {
@@ -433,61 +567,66 @@ body {
 
 .btn-danger {
   background: var(--rose-bg);
-  color: #fb7185;
+  color: var(--rose-text);
   border-color: var(--rose-border);
 }
 .btn-danger:hover {
-  background: rgba(244, 63, 94, 0.2);
+  background: rgba(244, 63, 94, 0.16);
+  border-color: var(--rose);
 }
 
 .btn-success {
   background: var(--emerald-bg);
-  color: #34d399;
+  color: var(--emerald-text);
   border-color: var(--emerald-border);
 }
 .btn-success:hover {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.16);
+  border-color: var(--emerald);
 }
 
-/* Badges */
+/* -----------------------------------------------------------------------------
+   Minimalist Badges & Indicators
+----------------------------------------------------------------------------- */
+
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 7px;
-  border-radius: 9999px;
-  font-size: 10.5px;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .badge-emerald {
   background: var(--emerald-bg);
-  color: #34d399;
+  color: var(--emerald-text);
   border: 1px solid var(--emerald-border);
 }
 
 .badge-rose {
   background: var(--rose-bg);
-  color: #fb7185;
+  color: var(--rose-text);
   border: 1px solid var(--rose-border);
 }
 
 .badge-amber {
   background: var(--amber-bg);
-  color: #fbbf24;
+  color: var(--amber-text);
   border: 1px solid var(--amber-border);
 }
 
 .badge-blue {
   background: var(--blue-bg);
-  color: #60a5fa;
+  color: var(--blue-text);
   border: 1px solid var(--blue-border);
 }
 
 .badge-purple {
   background: var(--purple-bg);
-  color: #c084fc;
+  color: var(--purple-text);
   border: 1px solid var(--purple-border);
 }
 
@@ -497,59 +636,63 @@ body {
   border: 1px solid var(--border-subtle);
 }
 
-/* Code & Pre */
+/* -----------------------------------------------------------------------------
+   Code & Mono Blocks
+----------------------------------------------------------------------------- */
+
 pre, code {
   font-family: var(--font-mono);
 }
 
 .code-block {
-  background: var(--bg-canvas);
+  background: var(--code-bg);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 10px;
+  padding: 9px 11px;
   font-size: 11px;
   overflow-x: auto;
-  color: #cbd5e1;
-  line-height: 1.4;
+  color: var(--text-secondary);
+  line-height: 1.45;
 }
 
-/* Live Beacon */
+/* -----------------------------------------------------------------------------
+   Live Status Beacon & Precision Cues
+----------------------------------------------------------------------------- */
+
 .live-beacon {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 9999px;
-  font-size: 11px;
+  gap: 5px;
+  font-size: 10.5px;
   font-weight: 600;
-  color: #34d399;
+  color: var(--emerald-text);
 }
 
 .beacon-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--emerald);
-  box-shadow: 0 0 6px var(--emerald);
-  animation: beacon-pulse 2s infinite ease-in-out;
+  animation: beacon-pulse 2.2s infinite ease-in-out;
 }
 
 @keyframes beacon-pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.4; }
-  100% { transform: scale(1); opacity: 1; }
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 0.3; }
+  100% { transform: scale(0.9); opacity: 0.8; }
 }
 
 /* Blame Root Cause Highlight Animation */
 .root-cause-glow {
-  box-shadow: 0 0 20px var(--rose-glow), 0 0 2px var(--rose) !important;
+  box-shadow: 0 0 0 1.5px var(--rose), 0 2px 10px var(--rose-glow) !important;
   border-color: var(--rose) !important;
-  animation: root-pulse 2.5s infinite alternate ease-in-out;
 }
 
-@keyframes root-pulse {
-  0% { box-shadow: 0 0 10px var(--rose-glow); }
-  100% { box-shadow: 0 0 25px rgba(244, 63, 94, 0.65), 0 0 4px var(--rose); }
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 4px 8px;
 }

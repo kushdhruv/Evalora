@@ -1,19 +1,15 @@
-// web/src/components/trajectory/InspectorDrawer.tsx - Deep Node & Root-Cause Inspector Drawer
+// web/src/components/trajectory/InspectorDrawer.tsx - Clean Minimalist Node & Root-Cause Inspector Drawer
 
 import React, { useState } from 'react';
 import {
   X,
   AlertTriangle,
-  CheckCircle,
-  Clock,
-  Coins,
   Brain,
   ThumbsUp,
   ThumbsDown,
   BookmarkPlus,
-  Zap,
 } from 'lucide-react';
-import { Evaluation, Failure, RootCause, TrajectoryNode } from '../../types';
+import type { Evaluation, Failure, RootCause, TrajectoryNode } from '../../types';
 import { curateTraceToDataset } from '../../services/api';
 
 interface InspectorDrawerProps {
@@ -67,22 +63,23 @@ export function InspectorDrawer({
       <div className="inspector-header">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className="badge badge-blue" style={{ fontSize: 10 }}>
+            <span className="badge badge-muted" style={{ fontSize: 9.5 }}>
               {node.event_type.toUpperCase()}
             </span>
-            <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#94a3b8' }}>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
               {node.node_id}
             </span>
           </div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', marginTop: 2 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', marginTop: 3 }}>
             {node.label}
           </div>
         </div>
         <button
           onClick={onClose}
-          style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+          title="Close inspector"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
       </div>
 
@@ -92,55 +89,55 @@ export function InspectorDrawer({
         {isRootCause && rootCause && (
           <div
             style={{
-              background: 'rgba(244, 63, 94, 0.12)',
-              border: '1.5px solid #f43f5e',
-              borderRadius: 8,
+              background: 'var(--rose-bg)',
+              border: '1px solid var(--rose-border)',
+              borderRadius: 'var(--radius-md)',
               padding: '12px 14px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#fb7185', fontWeight: 700, fontSize: 12 }}>
-              <AlertTriangle size={15} /> PRIMARY ROOT CAUSE IDENTIFIED
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--rose-text)', fontWeight: 700, fontSize: 11.5 }}>
+              <AlertTriangle size={14} /> PRIMARY ROOT CAUSE IDENTIFIED
             </div>
-            <div style={{ fontSize: 11.5, color: '#f8fafc', marginTop: 6, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 11.5, color: 'var(--text-primary)', marginTop: 6, lineHeight: 1.4 }}>
               {rootCause.explanation}
             </div>
-            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 6 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 6 }}>
               Attribution Confidence: {(rootCause.confidence_score * 100).toFixed(0)}%
             </div>
           </div>
         )}
 
-        {/* Human Feedback & Annotation Bar (New Relic Pattern) */}
+        {/* Human Feedback Bar */}
         <div
           style={{
-            background: '#07090e',
-            border: '1px solid #1c2638',
-            borderRadius: 6,
-            padding: '10px 12px',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>
             Human Verification
           </span>
           <div style={{ display: 'flex', gap: 6 }}>
             <button
               onClick={() => setFeedback('up')}
               className={`btn ${feedback === 'up' ? 'btn-success' : 'btn-secondary'}`}
-              style={{ padding: '4px 8px', fontSize: 11 }}
+              style={{ padding: '3px 7px', fontSize: 10.5 }}
               title="Mark response as accurate"
             >
-              <ThumbsUp size={12} /> Accurate
+              <ThumbsUp size={11} /> Accurate
             </button>
             <button
               onClick={() => setFeedback('down')}
               className={`btn ${feedback === 'down' ? 'btn-danger' : 'btn-secondary'}`}
-              style={{ padding: '4px 8px', fontSize: 11 }}
-              title="Mark response as hallucination / flawed"
+              style={{ padding: '3px 7px', fontSize: 10.5 }}
+              title="Mark response as flawed"
             >
-              <ThumbsDown size={12} /> Flawed
+              <ThumbsDown size={11} /> Flawed
             </button>
           </div>
         </div>
@@ -150,9 +147,9 @@ export function InspectorDrawer({
           onClick={handleCurate}
           disabled={curating}
           className="btn btn-secondary"
-          style={{ width: '100%', justifyContent: 'center', padding: '8px 12px' }}
+          style={{ width: '100%', justifyContent: 'center', padding: '7px 12px' }}
         >
-          <BookmarkPlus size={14} color="#60a5fa" />
+          <BookmarkPlus size={13} />
           {curatedSuccess
             ? '✓ Added to CI Regression Set!'
             : curating
@@ -163,14 +160,14 @@ export function InspectorDrawer({
         {/* Step Timing & Cost */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <div className="kpi-card" style={{ padding: '8px 10px' }}>
-            <span className="kpi-label" style={{ fontSize: 10 }}>Duration</span>
-            <span style={{ fontSize: 14, fontFamily: 'monospace', fontWeight: 700, color: '#60a5fa' }}>
+            <span className="kpi-label" style={{ fontSize: 9.5 }}>Duration</span>
+            <span style={{ fontSize: 13, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>
               {(node.duration_ms ?? node.payload.duration_ms ?? 0).toFixed(1)} ms
             </span>
           </div>
           <div className="kpi-card" style={{ padding: '8px 10px' }}>
-            <span className="kpi-label" style={{ fontSize: 10 }}>Tokens / Cost</span>
-            <span style={{ fontSize: 14, fontFamily: 'monospace', fontWeight: 700, color: '#34d399' }}>
+            <span className="kpi-label" style={{ fontSize: 9.5 }}>Cost</span>
+            <span style={{ fontSize: 13, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--emerald-text)' }}>
               ${(node.cost_usd ?? node.payload.cost_usd ?? 0).toFixed(4)}
             </span>
           </div>
@@ -178,35 +175,35 @@ export function InspectorDrawer({
 
         {/* 4-Layer Evaluator Judgments */}
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#f8fafc', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Brain size={14} color="#a855f7" /> Evaluator Judgments ({nodeEvaluations.length})
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Brain size={13} color="var(--purple-text)" /> Evaluator Judgments ({nodeEvaluations.length})
           </div>
           {nodeEvaluations.length === 0 ? (
-            <div style={{ fontSize: 11, color: '#64748b', fontStyle: 'italic' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>
               No individual evaluations recorded on this step.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {nodeEvaluations.map((ev) => (
                 <div
                   key={ev.eval_id}
                   style={{
-                    background: '#07090e',
-                    border: '1px solid #1c2638',
-                    borderRadius: 6,
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-sm)',
                     padding: '8px 10px',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#c084fc' }}>
-                      {ev.evaluator_name} ({ev.evaluator_layer})
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {ev.evaluator_name} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({ev.evaluator_layer})</span>
                     </span>
-                    <span className={`badge ${ev.passed ? 'badge-emerald' : 'badge-rose'}`}>
+                    <span className={`badge ${ev.passed ? 'badge-emerald' : 'badge-rose'}`} style={{ fontSize: 9.5 }}>
                       {(ev.score * 100).toFixed(0)}%
                     </span>
                   </div>
                   {ev.rationale && (
-                    <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.35 }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.35 }}>
                       {ev.rationale}
                     </div>
                   )}
@@ -219,7 +216,7 @@ export function InspectorDrawer({
         {/* Failures on this Node */}
         {nodeFailures.length > 0 && (
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#fb7185', marginBottom: 8 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--rose-text)', marginBottom: 8 }}>
               Detected Failures ({nodeFailures.length})
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -227,17 +224,17 @@ export function InspectorDrawer({
                 <div
                   key={f.failure_id}
                   style={{
-                    background: 'rgba(244, 63, 94, 0.08)',
-                    border: '1px solid rgba(244, 63, 94, 0.3)',
-                    borderRadius: 6,
+                    background: 'var(--rose-bg)',
+                    border: '1px solid var(--rose-border)',
+                    borderRadius: 'var(--radius-sm)',
                     padding: '8px 10px',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: '#fb7185' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: 'var(--rose-text)' }}>
                     <span>{f.category.toUpperCase()}</span>
                     <span>{f.severity}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: '#f8fafc', marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-primary)', marginTop: 4 }}>
                     {f.description}
                   </div>
                 </div>
@@ -248,7 +245,7 @@ export function InspectorDrawer({
 
         {/* Raw Payload Inspector */}
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#f8fafc', marginBottom: 6 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
             Raw Step Payload
           </div>
           <pre className="code-block">

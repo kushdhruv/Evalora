@@ -1,21 +1,17 @@
-// web/src/App.tsx - Evalora Production-Grade Agent Observability & Evaluation Platform
+// web/src/App.tsx - Evalora Phonic Clean Minimalistic Observability & Evaluation Platform
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Activity,
   Layers,
   GitCompare,
   Clock,
-  Filter,
   RefreshCw,
   Search,
-  ExternalLink,
-  ShieldAlert,
-  SlidersHorizontal,
-  ChevronRight,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
-import { HealthSummary, Trajectory, TrajectoryDetailResponse, TrajectoryNode } from './types';
+import type { HealthSummary, Trajectory, TrajectoryDetailResponse, TrajectoryNode } from './types';
 import { fetchHealthSummary, fetchTrajectories, fetchTrajectoryDetails } from './services/api';
 import { FlowCanvas } from './components/trajectory/FlowCanvas';
 import { TimelineWaterfall } from './components/trajectory/TimelineWaterfall';
@@ -35,7 +31,19 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'failed' | 'passed'>('all');
   const [autoSync, setAutoSync] = useState<boolean>(true);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [_isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Clean Theme Toggle State
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('evalora_theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('evalora_theme', theme);
+  }, [theme]);
 
   // Load health summary and trajectory list
   const loadInitialData = useCallback(async () => {
@@ -124,7 +132,7 @@ export function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Live Auto-Sync Toggle */}
           <button
             onClick={() => setAutoSync(!autoSync)}
@@ -137,13 +145,23 @@ export function App() {
                 <span className="beacon-dot" /> LIVE AUTO-SYNC
               </span>
             ) : (
-              <span style={{ color: '#64748b' }}>AUTO-SYNC PAUSED</span>
+              <span style={{ color: 'var(--text-muted)' }}>AUTO-SYNC PAUSED</span>
             )}
           </button>
 
+          {/* Theme Toggle Button */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="btn btn-secondary theme-toggle-btn"
+            title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+          >
+            {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
+            <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+          </button>
+
           {/* OpenClaw Plugin Badge */}
-          <span className="badge badge-purple" style={{ fontSize: 10 }}>
-            OpenClaw Plugin Active
+          <span className="badge badge-purple" style={{ fontSize: 9.5 }}>
+            OpenClaw Plugin
           </span>
 
           {/* Refresh Button */}
@@ -152,7 +170,7 @@ export function App() {
             className="btn btn-secondary"
             title="Refresh fleet telemetry"
           >
-            <RefreshCw size={13} />
+            <RefreshCw size={12} />
           </button>
         </div>
       </header>
@@ -176,25 +194,25 @@ export function App() {
             <span className="sidebar-title">
               Trajectories ({filteredTrajectories.length})
             </span>
-            <div style={{ display: 'flex', gap: 4 }}>
+            <div style={{ display: 'flex', gap: 3 }}>
               <button
                 onClick={() => setStatusFilter('all')}
                 className={`btn ${statusFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '2px 6px', fontSize: 10 }}
+                style={{ padding: '2px 6px', fontSize: 9.5 }}
               >
                 All
               </button>
               <button
                 onClick={() => setStatusFilter('failed')}
                 className={`btn ${statusFilter === 'failed' ? 'btn-danger' : 'btn-secondary'}`}
-                style={{ padding: '2px 6px', fontSize: 10 }}
+                style={{ padding: '2px 6px', fontSize: 9.5 }}
               >
                 Failed
               </button>
               <button
                 onClick={() => setStatusFilter('passed')}
                 className={`btn ${statusFilter === 'passed' ? 'btn-success' : 'btn-secondary'}`}
-                style={{ padding: '2px 6px', fontSize: 10 }}
+                style={{ padding: '2px 6px', fontSize: 9.5 }}
               >
                 Passed
               </button>
@@ -202,19 +220,19 @@ export function App() {
           </div>
 
           {/* Search Box */}
-          <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-subtle)' }}>
+          <div style={{ padding: '7px 10px', borderBottom: '1px solid var(--border-subtle)' }}>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
-                background: 'var(--bg-canvas)',
+                background: 'var(--bg-elevated)',
                 border: '1px solid var(--border-subtle)',
-                borderRadius: 4,
+                borderRadius: 'var(--radius-sm)',
                 padding: '4px 8px',
               }}
             >
-              <Search size={12} color="#64748b" />
+              <Search size={12} color="var(--text-muted)" />
               <input
                 type="text"
                 value={searchQuery}
@@ -223,7 +241,7 @@ export function App() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontSize: 11,
                   outline: 'none',
                   width: '100%',
@@ -235,7 +253,7 @@ export function App() {
           {/* Trajectory Cards */}
           <div className="sidebar-list">
             {filteredTrajectories.length === 0 ? (
-              <div style={{ padding: 18, textAlign: 'center', color: '#64748b', fontSize: 12 }}>
+              <div style={{ padding: 18, textAlign: 'center', color: 'var(--text-muted)', fontSize: 11.5 }}>
                 No trajectories match filter.
               </div>
             ) : (
@@ -280,17 +298,17 @@ export function App() {
           <div className="workspace-header">
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 11, color: '#64748b' }}>Active Trace:</span>
-                <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#60a5fa' }}>
+                <span style={{ fontSize: 10.5, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Active Trace:</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
                   {activeTraceId}
                 </span>
                 {activeDetail?.root_cause && (
-                  <span className="badge badge-rose" style={{ fontSize: 10 }}>
+                  <span className="badge badge-rose" style={{ fontSize: 9.5 }}>
                     Root Cause: {activeDetail.root_cause.primary_category}
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+              <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', marginTop: 2 }}>
                 {activeDetail?.trajectory.goal || 'Autonomous Goal Execution'}
               </div>
             </div>
@@ -303,21 +321,21 @@ export function App() {
                   className={`view-btn ${activeView === 'flow' ? 'active' : ''}`}
                   title="Interactive Causal DAG View"
                 >
-                  <Layers size={13} /> Causal Flow DAG
+                  <Layers size={12} /> Causal Flow DAG
                 </button>
                 <button
                   onClick={() => setActiveView('waterfall')}
                   className={`view-btn ${activeView === 'waterfall' ? 'active' : ''}`}
                   title="Gantt Duration Waterfall View"
                 >
-                  <Clock size={13} /> Span Waterfall
+                  <Clock size={12} /> Span Waterfall
                 </button>
                 <button
                   onClick={() => setActiveView('comparator')}
                   className={`view-btn ${activeView === 'comparator' ? 'active' : ''}`}
                   title="Golden Path Sequence Comparator"
                 >
-                  <GitCompare size={13} /> Golden Path
+                  <GitCompare size={12} /> Golden Path
                 </button>
               </div>
             </div>
@@ -342,7 +360,7 @@ export function App() {
                 <GoldenPathComparator detail={activeDetail} />
               )
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
                 Select a trajectory to inspect.
               </div>
             )}

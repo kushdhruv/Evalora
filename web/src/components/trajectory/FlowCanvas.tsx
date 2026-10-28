@@ -1,4 +1,4 @@
-// web/src/components/trajectory/FlowCanvas.tsx - Interactive React Flow Causal DAG Visualizer
+// web/src/components/trajectory/FlowCanvas.tsx - Clean Minimalist React Flow Causal DAG Visualizer
 
 import { useMemo, useState } from 'react';
 import {
@@ -75,12 +75,12 @@ export function FlowCanvas({ detail, selectedNodeId, onSelectNode }: FlowCanvasP
         target: edge.target_node_id,
         animated: isCascadeEdge,
         style: {
-          stroke: isCascadeEdge ? '#f43f5e' : '#334155',
-          strokeWidth: isCascadeEdge ? 2.5 : 1.5,
+          stroke: isCascadeEdge ? 'var(--rose)' : 'var(--edge-stroke)',
+          strokeWidth: isCascadeEdge ? 2 : 1.2,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: isCascadeEdge ? '#f43f5e' : '#475569',
+          color: isCascadeEdge ? 'var(--rose)' : 'var(--edge-arrow)',
         },
       };
     });
@@ -98,30 +98,30 @@ export function FlowCanvas({ detail, selectedNodeId, onSelectNode }: FlowCanvasP
           top: 12,
           right: 12,
           zIndex: 10,
-          background: 'rgba(14, 19, 29, 0.85)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid #1c2638',
-          borderRadius: 6,
-          padding: 3,
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-sm)',
+          padding: 2,
           display: 'flex',
-          gap: 4,
+          gap: 3,
+          boxShadow: 'var(--card-shadow)',
         }}
       >
         <button
           onClick={() => setDirection('TB')}
           className={`btn ${direction === 'TB' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ padding: '4px 8px', fontSize: 11 }}
+          style={{ padding: '3px 8px', fontSize: 10.5 }}
           title="Vertical Hierarchy Layout"
         >
-          <Rows size={13} /> Vertical
+          <Rows size={12} /> Vertical
         </button>
         <button
           onClick={() => setDirection('LR')}
           className={`btn ${direction === 'LR' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ padding: '4px 8px', fontSize: 11 }}
+          style={{ padding: '3px 8px', fontSize: 10.5 }}
           title="Horizontal Flow Layout"
         >
-          <LayoutGrid size={13} /> Horizontal
+          <LayoutGrid size={12} /> Horizontal
         </button>
       </div>
 
@@ -138,15 +138,15 @@ export function FlowCanvas({ detail, selectedNodeId, onSelectNode }: FlowCanvasP
         minZoom={0.2}
         maxZoom={2}
       >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#1e293b" />
+        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
         <Controls showInteractive={false} />
         <MiniMap
           nodeColor={(n) => {
-            if (n.id === rootCauseNodeId) return '#f43f5e';
-            if (failureNodeIds.has(n.id)) return '#f43f5e';
-            return '#334155';
+            if (n.id === rootCauseNodeId) return 'var(--rose)';
+            if (failureNodeIds.has(n.id)) return 'var(--rose)';
+            return 'var(--edge-arrow)';
           }}
-          maskColor="rgba(7, 9, 14, 0.75)"
+          maskColor="var(--canvas-mask)"
         />
       </ReactFlow>
     </div>
