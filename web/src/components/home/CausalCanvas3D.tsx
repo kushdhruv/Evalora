@@ -29,11 +29,13 @@ export function CausalCanvas3D({ theme, onNodeClick }: CausalCanvas3DProps) {
       antialias: true,
       alpha: true,
       powerPreference: 'high-performance',
+      precision: 'mediump',
+      stencil: false,
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
 
     // 3. Multi-Tone Atmospheric Lighting
@@ -747,14 +749,26 @@ export function CausalCanvas3D({ theme, onNodeClick }: CausalCanvas3DProps) {
       targetCamY = normY * 0.9;
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    // 9. Visibility and Intersection Tracking (0% CPU/GPU when offscreen)
+    let isVisible = true;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(container);
 
-    // 9. Animation Loop
+    // 10. Animation Loop
     let animId: number;
     const clock = new THREE.Clock();
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
+
+      // Skip render if offscreen or tab is hidden in background
+      if (!isVisible || document.hidden) return;
+
       const elapsed = clock.getElapsedTime();
 
       // Smooth camera interpolation
@@ -816,7 +830,7 @@ export function CausalCanvas3D({ theme, onNodeClick }: CausalCanvas3DProps) {
 
     animate();
 
-    // 10. Resize Observer
+    // 11. Resize Observer
     const handleResize = () => {
       if (!container) return;
       width = container.clientWidth || window.innerWidth;
@@ -828,11 +842,26 @@ export function CausalCanvas3D({ theme, onNodeClick }: CausalCanvas3DProps) {
 
     window.addEventListener('resize', handleResize);
 
-    // Cleanup
+    // Cleanup & GPU Memory Release
     return () => {
       cancelAnimationFrame(animId);
+      observer.disconnect();
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
+
+      // Traverse and dispose all geometries and materials to avoid WebGL memory leaks
+      scene.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh;
+          mesh.geometry?.dispose();
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((m) => m.dispose());
+          } else if (mesh.material) {
+            mesh.material.dispose();
+          }
+        }
+      });
+
       if (renderer.domElement.parentNode) {
         renderer.domElement.parentNode.removeChild(renderer.domElement);
       }

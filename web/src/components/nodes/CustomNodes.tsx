@@ -22,7 +22,7 @@ interface NodeData {
   hasFailed?: boolean;
 }
 
-export function PlanNode({ data }: { data: NodeData }) {
+export const PlanNode = React.memo(function PlanNode({ data }: { data: NodeData }) {
   const { node, isRootCause, isSelected } = data;
   return (
     <div
@@ -89,9 +89,9 @@ export function PlanNode({ data }: { data: NodeData }) {
       />
     </div>
   );
-}
+});
 
-export function ToolCallNode({ data }: { data: NodeData }) {
+export const ToolCallNode = React.memo(function ToolCallNode({ data }: { data: NodeData }) {
   const { node, isRootCause, isSelected, hasFailed } = data;
   const toolName = node.payload.tool_call?.tool_name || node.label || 'tool';
   const isError = hasFailed || node.payload.tool_call?.is_error;
@@ -194,9 +194,9 @@ export function ToolCallNode({ data }: { data: NodeData }) {
       />
     </div>
   );
-}
+});
 
-export function MemoryNode({ data }: { data: NodeData }) {
+export const MemoryNode = React.memo(function MemoryNode({ data }: { data: NodeData }) {
   const { node, isRootCause, isSelected } = data;
   const mem = node.payload.memory_event || {};
   const isRead = node.event_type === 'memory_read';
@@ -265,9 +265,9 @@ export function MemoryNode({ data }: { data: NodeData }) {
       />
     </div>
   );
-}
+});
 
-export function OutcomeNode({ data }: { data: NodeData }) {
+export const OutcomeNode = React.memo(function OutcomeNode({ data }: { data: NodeData }) {
   const { node, isRootCause, isSelected, hasFailed, evaluationScore } = data;
   const isFailed = hasFailed;
 
@@ -355,4 +355,4 @@ export function OutcomeNode({ data }: { data: NodeData }) {
       </div>
     </div>
   );
-}
+});

@@ -42,20 +42,38 @@ export function FlowCanvas({ detail, selectedNodeId, onSelectNode }: FlowCanvasP
   const rootCauseNodeId = root_cause?.primary_failure_node_id || null;
   const propagationChain = useMemo(() => new Set(root_cause?.propagation_chain || []), [root_cause]);
 
-  const { layoutedNodes, layoutedEdges } = useMemo(() => {
-    const rawNodes: Node[] = trajectory.nodes.map((node) => {
-      const isRootCause = node.node_id === rootCauseNodeId;
-      const isInCascadePath = propagationChain.has(node.node_id);
-      const isSelected = node.node_id === selectedNodeId;
-      const hasFailed = failureNodeIds.has(node.node_id);
-      const evalItem = evaluations.find((e) => e.target_node_id === node.node_id);
+  // 1. Structural Dagre Layout - only recomputed when graph topology or direction changes
+  const baseLayout = useMemo(() => {
+    const rawNodes: Node[] = trajectory.nodes.map((node) => ({
+      id: node.node_id,
+      type: node.event_type in nodeTypes ? node.event_type : 'tool_call',
+      position: { x: 0, y: 0 },
+      data: { node },
+    }));
+
+    const rawEdges: Edge[] = trajectory.edges.map((edge, idx) => ({
+      id: `e-${edge.source_node_id}-${edge.target_node_id}-${idx}`,
+      source: edge.source_node_id,
+      target: edge.target_node_id,
+    }));
+
+    return getLayoutedElements(rawNodes, rawEdges, direction);
+  }, [trajectory.trace_id, trajectory.nodes, trajectory.edges, direction]);
+
+  // 2. High-speed O(N) presentation mapping - 0ms overhead on node click/selection!
+  const layoutedNodes = useMemo(() => {
+    return baseLayout.nodes.map((node) => {
+      const origNode = node.data.node as TrajectoryNode;
+      const isRootCause = origNode.node_id === rootCauseNodeId;
+      const isInCascadePath = propagationChain.has(origNode.node_id);
+      const isSelected = origNode.node_id === selectedNodeId;
+      const hasFailed = failureNodeIds.has(origNode.node_id);
+      const evalItem = evaluations.find((e) => e.target_node_id === origNode.node_id);
 
       return {
-        id: node.node_id,
-        type: node.event_type in nodeTypes ? node.event_type : 'tool_call',
-        position: { x: 0, y: 0 },
+        ...node,
         data: {
-          node,
+          node: origNode,
           isRootCause,
           isInCascadePath,
           isSelected,
@@ -64,15 +82,15 @@ export function FlowCanvas({ detail, selectedNodeId, onSelectNode }: FlowCanvasP
         },
       };
     });
+  }, [baseLayout.nodes, rootCauseNodeId, propagationChain, selectedNodeId, failureNodeIds, evaluations]);
 
-    const rawEdges: Edge[] = trajectory.edges.map((edge, idx) => {
+  const layoutedEdges = useMemo(() => {
+    return baseLayout.edges.map((edge) => {
       const isCascadeEdge =
-        propagationChain.has(edge.source_node_id) && propagationChain.has(edge.target_node_id);
+        propagationChain.has(edge.source) && propagationChain.has(edge.target);
 
       return {
-        id: `e-${edge.source_node_id}-${edge.target_node_id}-${idx}`,
-        source: edge.source_node_id,
-        target: edge.target_node_id,
+        ...edge,
         animated: isCascadeEdge,
         style: {
           stroke: isCascadeEdge ? 'var(--rose)' : 'var(--edge-stroke)',
@@ -84,10 +102,7 @@ export function FlowCanvas({ detail, selectedNodeId, onSelectNode }: FlowCanvasP
         },
       };
     });
-
-    const { nodes: lNodes, edges: lEdges } = getLayoutedElements(rawNodes, rawEdges, direction);
-    return { layoutedNodes: lNodes, layoutedEdges: lEdges };
-  }, [trajectory, evaluations, failureNodeIds, rootCauseNodeId, propagationChain, selectedNodeId, direction]);
+  }, [baseLayout.edges, propagationChain]);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>

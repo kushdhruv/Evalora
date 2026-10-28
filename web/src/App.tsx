@@ -63,7 +63,7 @@ export function App() {
     localStorage.setItem('evalora_theme', theme);
   }, [theme]);
 
-  // Load health summary and trajectory list
+  // Stable load health summary and trajectory list (never re-created on trace selection)
   const loadInitialData = useCallback(async () => {
     try {
       const [summary, trajs] = await Promise.all([
@@ -74,15 +74,13 @@ export function App() {
       setTrajectories(trajs);
 
       // Default select the latest trajectory if none active
-      if (trajs.length > 0 && !activeTraceId) {
-        setActiveTraceId(trajs[0].trace_id);
-      }
+      setActiveTraceId((prev) => (!prev && trajs.length > 0 ? trajs[0].trace_id : prev));
     } catch (e) {
       console.error('Error fetching initial data:', e);
     } finally {
       setIsLoading(false);
     }
-  }, [activeTraceId]);
+  }, []);
 
   // Load details whenever activeTraceId changes
   useEffect(() => {
@@ -110,33 +108,42 @@ export function App() {
     };
   }, [activeTraceId]);
 
-  // Initial load
+  // Initial load once on mount
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
 
-  // Auto-sync polling every 3 seconds
+  // Auto-sync polling: only when on studio, autoSync enabled, and tab is visible
   useEffect(() => {
-    if (!autoSync) return;
+    if (!autoSync || page !== 'studio') return;
+
     const interval = setInterval(() => {
+      if (document.hidden) return; // Zero network/CPU consumption when tab is hidden
       fetchHealthSummary().then(setHealthSummary).catch(() => {});
       fetchTrajectories().then(setTrajectories).catch(() => {});
-    }, 3000);
+    }, 5000);
+
     return () => clearInterval(interval);
-  }, [autoSync]);
+  }, [autoSync, page]);
 
-  // Filter trajectories
-  const filteredTrajectories = trajectories.filter((t) => {
-    const matchesSearch =
-      t.trace_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.goal || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.agent_id.toLowerCase().includes(searchQuery.toLowerCase());
+  // High-performance deferred search & memoized filtering
+  const deferredSearch = React.useDeferredValue(searchQuery);
 
-    if (!matchesSearch) return false;
-    if (statusFilter === 'failed') return t.is_success === false;
-    if (statusFilter === 'passed') return t.is_success !== false;
-    return true;
-  });
+  const filteredTrajectories = React.useMemo(() => {
+    const q = deferredSearch.toLowerCase().trim();
+    return trajectories.filter((t) => {
+      const matchesSearch =
+        !q ||
+        t.trace_id.toLowerCase().includes(q) ||
+        (t.goal || '').toLowerCase().includes(q) ||
+        t.agent_id.toLowerCase().includes(q);
+
+      if (!matchesSearch) return false;
+      if (statusFilter === 'failed') return t.is_success === false;
+      if (statusFilter === 'passed') return t.is_success !== false;
+      return true;
+    });
+  }, [trajectories, deferredSearch, statusFilter]);
 
   // Render Homepage if active
   if (page === 'home') {

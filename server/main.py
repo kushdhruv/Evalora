@@ -48,11 +48,19 @@ app.add_middleware(
 
 pipeline = EvaluatorPipeline()
 
+class ImmutableHashedStaticFiles(StaticFiles):
+    """Adds aggressive caching for content-hashed assets to eliminate network re-fetch latency."""
+    async def get_response(self, path: str, scope: Any):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
 WEB_DIST_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web", "dist")
 if os.path.exists(WEB_DIST_DIR):
     assets_dir = os.path.join(WEB_DIST_DIR, "assets")
     if os.path.exists(assets_dir):
-        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+        app.mount("/assets", ImmutableHashedStaticFiles(directory=assets_dir), name="assets")
 
 
 # -----------------------------------------------------------------------------
