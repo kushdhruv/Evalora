@@ -10,6 +10,7 @@
 
 # Documentation (kept local, excluded from public repo per user request)
 docs/
+*.pdf
 
 # Databases & SQLite WAL files
 data/*.db

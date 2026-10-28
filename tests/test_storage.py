@@ -57,3 +57,28 @@ def test_repository_health_summary():
     assert summary["tool_usage_counts"]["web_search"] == 1
     assert summary["tool_usage_counts"]["database"] == 1
     assert summary["failure_category_counts"]["tool"] == 1
+
+
+def test_repository_get_and_list_trajectories():
+    repo = MemoryRepository()
+    now = datetime.now(timezone.utc)
+    ev = AgentEvent(
+        trace_id="trace_test_fetch",
+        span_id="span_test_fetch",
+        event_type=EventType.TOOL_CALL,
+        timestamp=now,
+        tool_call=ToolCall(tool_name="eval_check", execution_time_ms=45.0),
+    )
+    t = TrajectoryBuilder.build_trajectory([ev])
+    repo.save_trajectory(t)
+
+    retrieved = repo.get_trajectory("trace_test_fetch")
+    assert retrieved is not None
+    assert retrieved.trace_id == "trace_test_fetch"
+    assert len(retrieved.nodes) == len(t.nodes)
+    assert retrieved.nodes[0].label == t.nodes[0].label
+
+    trajs = repo.list_trajectories(limit=10)
+    assert len(trajs) >= 1
+    assert any(traj.trace_id == "trace_test_fetch" for traj in trajs)
+

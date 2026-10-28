@@ -1,13 +1,15 @@
 """server/main.py: FastAPI Server and Production-Grade Agent-Health Dashboard."""
 
-import asyncio
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from core.agent.runtime import execute_real_agent_v1, execute_real_agent_v2
@@ -36,17 +38,36 @@ app = FastAPI(
     version="1.0.0",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 pipeline = EvaluatorPipeline()
 
+WEB_DIST_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web", "dist")
+if os.path.exists(WEB_DIST_DIR):
+    assets_dir = os.path.join(WEB_DIST_DIR, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
 
 # -----------------------------------------------------------------------------
-# Root Redirect to Dashboard
+# Frontend SPA Routes
 # -----------------------------------------------------------------------------
 
-@app.get("/", include_in_schema=False)
-async def root_redirect():
-    """Redirect root path to interactive dashboard."""
-    return RedirectResponse(url="/dashboard")
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+@app.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
+async def serve_root():
+    """Serves the modern React observability dashboard, falling back to legacy if dist not built."""
+    index_path = os.path.join(WEB_DIST_DIR, "index.html")
+    if os.path.exists(index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return RedirectResponse(url="/legacy-dashboard")
 
 
 # -----------------------------------------------------------------------------
@@ -262,9 +283,9 @@ async def get_dataset_items(dataset_id: str):
 # Production-Grade Agent-Health Inspired Web Dashboard
 # -----------------------------------------------------------------------------
 
-@app.get("/dashboard", response_class=HTMLResponse)
-async def serve_dashboard():
-    """High-density real-time dashboard inspired by OpenSearch agent-health."""
+@app.get("/legacy-dashboard", response_class=HTMLResponse)
+async def serve_legacy_dashboard():
+    """High-density real-time dashboard inspired by OpenSearch agent-health (Legacy HTML View)."""
     summary = default_repository.get_health_summary()
     trajectories = default_repository.list_trajectories(limit=25)
 

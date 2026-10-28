@@ -131,14 +131,16 @@ Inspired by recent benchmarks (*AMA-Bench*), the memory auditor observes real ag
 
 ---
 
-### 4. Real-Time Agent-Health Web Dashboard
-Inspired by OpenSearch's `agent-health` architecture, the embedded web dashboard at `http://127.0.0.1:8000/dashboard` provides:
-- **Live Fleet Telemetry**: Success rates, average latency, total trajectory counts, and tool distribution histograms.
-- **Auto-Sync Polling**: Automatically refreshes live agent executions every 3 seconds.
-- **Interactive SVG Trajectory DAG**: Renders sequence dependencies, parent-child invocation trees, and data-flow edges with color-coded status badges.
-- **Root Cause & Blame Inspector**: Highlights the isolated initial fault node in red and details error rationale.
-- **Golden Path Benchmark Comparator**: Compares actual agent tool trajectories against the ideal golden execution sequence.
-- **One-Click Live Agent Runner**: Executes flawed (`v1`) and fixed (`v2`) agent runs live against a real SQLite database.
+### 4. Interactive Modern Observability & Evaluation Studio
+Inspired by OpenSearch's `agent-health` and modern APM telemetry architectures (New Relic AIM), the pre-compiled, embedded dashboard at `http://127.0.0.1:8000/` (or `/dashboard`) provides:
+- **Fleet Telemetry KPI Strip**: Real-time fleet success rate, P95 and average execution latency, token spend estimates, active tool invocation volume, and categorized failure distributions.
+- **Dual-View Trajectory Canvas**:
+  - **Causal Flow DAG**: Interactive node-graph (`@xyflow/react` + Dagre auto-layout) with plan, tool-call, memory, and outcome nodes, glowing root-cause blame propagation chains, and failure cascade markers.
+  - **Span Timeline Waterfall**: Sub-millisecond Gantt duration distribution bars with visual start-offset positioning.
+- **Side-by-Side Golden Path Comparator**: Real-time Levenshtein sequence alignment between actual tool execution paths and reference golden traces, highlighting unexpected additions, deletions, or order inversions.
+- **Deep Inspector Drawer**: Slide-out detail panel inspecting execution payloads, evaluator verdicts, in-situ memory retrieval audits, and 1-click CI regression dataset curation.
+- **Interactive Live Agent Studio**: Directly run flawed (`v1`) or fixed (`v2`) agent workflows against local SQLite databases with instant telemetry ingestion and auto-sync updates.
+- **Zero-Build Dependency**: Shipped with pre-compiled bundles in `web/dist` served directly by FastAPI, plus full source in `web/` for custom Vite development.
 
 ---
 

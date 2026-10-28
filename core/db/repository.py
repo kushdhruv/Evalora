@@ -137,13 +137,15 @@ class PersistentRepository:
             db_traj = session.query(DBTrajectory).filter_by(trace_id=trace_id).first()
             if not db_traj:
                 return None
+            raw_nodes: List[Any] = db_traj.nodes or []
+            raw_edges: List[Any] = db_traj.edges or []
             return Trajectory(
                 trajectory_id=UUID(db_traj.trajectory_id),
                 trace_id=db_traj.trace_id,
                 agent_id=db_traj.agent_id,
                 agent_version=db_traj.agent_version,
-                nodes=[TrajectoryNode(**n) for n in db_traj.nodes],
-                edges=[TrajectoryEdge(**e) for e in db_traj.edges],
+                nodes=[TrajectoryNode.model_validate(n) for n in raw_nodes],
+                edges=[TrajectoryEdge.model_validate(e) for e in raw_edges],
                 total_latency_ms=db_traj.total_latency_ms,
                 total_tokens=db_traj.total_tokens,
                 total_cost_usd=db_traj.total_cost_usd,
@@ -159,14 +161,16 @@ class PersistentRepository:
             db_trajs = session.query(DBTrajectory).order_by(DBTrajectory.created_at.desc()).limit(limit).all()
             result = []
             for t in db_trajs:
+                raw_nodes: List[Any] = t.nodes or []
+                raw_edges: List[Any] = t.edges or []
                 result.append(
                     Trajectory(
                         trajectory_id=UUID(t.trajectory_id),
                         trace_id=t.trace_id,
                         agent_id=t.agent_id,
                         agent_version=t.agent_version,
-                        nodes=[TrajectoryNode(**n) for n in t.nodes],
-                        edges=[TrajectoryEdge(**e) for e in t.edges],
+                        nodes=[TrajectoryNode.model_validate(n) for n in raw_nodes],
+                        edges=[TrajectoryEdge.model_validate(e) for e in raw_edges],
                         total_latency_ms=t.total_latency_ms,
                         total_tokens=t.total_tokens,
                         total_cost_usd=t.total_cost_usd,
