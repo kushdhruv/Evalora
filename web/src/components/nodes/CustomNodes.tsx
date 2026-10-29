@@ -10,6 +10,7 @@ import {
   AlertOctagon,
   Clock,
   Coins,
+  MessagesSquare,
 } from 'lucide-react';
 import type { TrajectoryNode } from '../../types';
 
@@ -353,6 +354,93 @@ export const OutcomeNode = React.memo(function OutcomeNode({ data }: { data: Nod
           </span>
         )}
       </div>
+    </div>
+  );
+});
+
+export const AgentMessageNode = React.memo(function AgentMessageNode({ data }: { data: NodeData }) {
+  const { node, isRootCause, isSelected, hasFailed } = data;
+  const isDelegate = node.event_type === 'agent_delegate';
+  const sender = node.agent_id || node.payload.agent_id || 'Agent';
+  const recipient = node.recipient_agent || node.payload.recipient_agent || (isDelegate ? 'Subagent' : 'Target');
+  const content = node.payload.content || (isDelegate ? `Delegated task to ${recipient}` : 'Agent Message');
+  const duration = node.duration_ms ?? node.payload.duration_ms ?? 0;
+
+  return (
+    <div
+      style={{
+        width: 260,
+        background: 'var(--node-bg)',
+        border: `1px solid ${
+          isRootCause
+            ? 'var(--rose)'
+            : hasFailed
+            ? 'var(--rose-border)'
+            : isSelected
+            ? 'var(--border-focus)'
+            : 'var(--border-subtle)'
+        }`,
+        borderRadius: 'var(--radius-md)',
+        padding: '10px 12px',
+        color: 'var(--text-primary)',
+        boxShadow: isRootCause
+          ? '0 0 0 1.5px var(--rose), 0 2px 8px var(--rose-glow)'
+          : isSelected
+          ? '0 0 0 1.5px var(--border-focus), var(--node-shadow)'
+          : 'var(--node-shadow)',
+        transition: 'all 0.15s ease',
+      }}
+      className={isRootCause ? 'root-cause-glow' : ''}
+    >
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: 'var(--color-blue, #3b82f6)', border: 'none', width: 6, height: 6 }}
+      />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, fontWeight: 700, color: '#3b82f6' }}>
+          <MessagesSquare size={13} />
+          <span>{isDelegate ? 'DELEGATION' : 'INTER-AGENT MSG'}</span>
+        </div>
+        <span className="badge badge-purple" style={{ fontSize: 9 }}>
+          {sender} → {recipient}
+        </span>
+      </div>
+
+      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
+        {node.label || (isDelegate ? `Delegate to ${recipient}` : `Message to ${recipient}`)}
+      </div>
+
+      {content && (
+        <div
+          style={{
+            fontSize: 11,
+            color: 'var(--text-secondary)',
+            maxHeight: 36,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            lineHeight: 1.4,
+            marginBottom: 6,
+          }}
+        >
+          {content}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Clock size={11} /> {duration.toFixed(1)}ms
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)' }}>{node.node_id}</span>
+      </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: 'var(--color-blue, #3b82f6)', border: 'none', width: 6, height: 6 }}
+      />
     </div>
   );
 });

@@ -8,7 +8,9 @@ export type EventType =
   | 'reasoning'
   | 'state_update'
   | 'observation'
-  | 'final_outcome';
+  | 'final_outcome'
+  | 'agent_message'
+  | 'agent_delegate';
 
 export type FailureCategory =
   | 'planning'
@@ -24,6 +26,8 @@ export interface TrajectoryNode {
   timestamp: string;
   event_type: EventType;
   label: string;
+  agent_id?: string;
+  recipient_agent?: string;
   payload: {
     content?: string;
     tool_call?: {
@@ -63,6 +67,8 @@ export interface Trajectory {
   trace_id: string;
   agent_id: string;
   agent_version: string;
+  session_id?: string;
+  sub_agents?: string[];
   goal?: string;
   nodes: TrajectoryNode[];
   edges: TrajectoryEdge[];

@@ -42,8 +42,8 @@ class SpanNormalizer:
                 input_args = {"value": raw_input}
 
             raw_output = attrs.get("tool.output") or attrs.get("output.value")
-            is_err = span.status_code == "ERROR" or "error" in attrs
-            err_msg = attrs.get("error.message") if is_err else None
+            is_err = span.status_code == "ERROR" or bool(attrs.get("error")) or bool(attrs.get("error.message"))
+            err_msg = attrs.get("error.message") or (str(attrs["error"]) if is_err and attrs.get("error") else None)
             duration_ms = (span.end_time - span.start_time).total_seconds() * 1000.0
 
             tool_call = ToolCall(
@@ -90,9 +90,51 @@ class SpanNormalizer:
         elif "observation" in span_name:
             event_type = EventType.OBSERVATION
 
-        # 6. Default to Reasoning (LLM generation / chain step)
+        # 6. Explicit Multi-Agent Kind Detection (OpenInference)
+        elif kind == "AGENT_MESSAGE":
+            event_type = EventType.AGENT_MESSAGE
+
+        elif kind == "AGENT_DELEGATE":
+            event_type = EventType.AGENT_DELEGATE
+
+        # 7. Multi-Agent Delegation Heuristics
+        elif (
+            "delegate" in span_name
+            or attrs.get("agent.action") == "delegate"
+            or attrs.get("agent.action") == "handoff"
+            or "handoff" in span_name
+        ):
+            event_type = EventType.AGENT_DELEGATE
+
+        # 8. Multi-Agent Chat / Message Heuristics
+        elif (
+            "agent_message" in span_name
+            or attrs.get("agent.action") == "message"
+            or (attrs.get("sender_agent") and attrs.get("recipient_agent") and "chat" in span_name)
+        ):
+            event_type = EventType.AGENT_MESSAGE
+
+        # 9. Default to Reasoning (LLM generation / chain step)
         else:
             event_type = EventType.REASONING
+
+        sender_agent = (
+            attrs.get("agent.sender")
+            or attrs.get("sender_agent")
+            or attrs.get("agent.id")
+            or attrs.get("openinference.agent.name")
+        )
+        recipient_agent = (
+            attrs.get("agent.recipient")
+            or attrs.get("recipient_agent")
+            or attrs.get("agent.target")
+            or attrs.get("target_agent")
+        )
+        session_id = (
+            attrs.get("session.id")
+            or attrs.get("session_id")
+            or attrs.get("conversation_id")
+        )
 
         return AgentEvent(
             trace_id=span.trace_id,
@@ -102,5 +144,8 @@ class SpanNormalizer:
             content=str(content) if content is not None else None,
             tool_call=tool_call,
             memory_event=memory_event,
+            sender_agent=str(sender_agent) if sender_agent else None,
+            recipient_agent=str(recipient_agent) if recipient_agent else None,
+            session_id=str(session_id) if session_id else None,
             metadata=attrs,
         )

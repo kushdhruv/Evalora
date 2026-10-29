@@ -36,24 +36,28 @@ class MemoryTelemetryAuditor:
         usefulness_scores: List[float] = []
         staleness_detected = False
 
-        # Gather subsequent tools and content
-        subsequent_tool_args: List[str] = []
-        subsequent_content: List[str] = []
-
-        for node in trajectory.nodes:
-            if node.event_type == EventType.TOOL_CALL:
-                subsequent_tool_args.append(
-                    json.dumps(node.payload.get("tool_call", {}).get("input_args", {}))
-                )
-            elif node.payload.get("content"):
-                subsequent_content.append(str(node.payload["content"]))
-
-        combined_subsequent_text = " ".join(subsequent_tool_args + subsequent_content).lower()
+        node_ids = [n.node_id for n in trajectory.nodes]
 
         # Audit each read event
         for m_node in memory_nodes:
             mem_data = m_node.payload.get("memory_event", {})
             if mem_data.get("operation") in ("query", "read"):
+                # Chronological downstream causality: only consider actions occurring AFTER this memory read
+                m_idx = node_ids.index(m_node.node_id) if m_node.node_id in node_ids else -1
+                subsequent_nodes = trajectory.nodes[m_idx + 1 :] if m_idx >= 0 else trajectory.nodes
+
+                subsequent_tool_args: List[str] = []
+                subsequent_content: List[str] = []
+                for node in subsequent_nodes:
+                    if node.event_type == EventType.TOOL_CALL:
+                        subsequent_tool_args.append(
+                            json.dumps(node.payload.get("tool_call", {}).get("input_args", {}))
+                        )
+                    elif node.payload.get("content"):
+                        subsequent_content.append(str(node.payload["content"]))
+
+                combined_subsequent_text = " ".join(subsequent_tool_args + subsequent_content).lower()
+
                 # 1. Retrieval Relevance
                 sim_scores = mem_data.get("similarity_scores", [])
                 if sim_scores:

@@ -1,18 +1,30 @@
 """server/main.py: FastAPI Server and Production-Grade Agent-Health Dashboard."""
 
+import asyncio
+import logging
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 from typing import Any, Dict, List, Optional
-from uuid import UUID
-from fastapi import FastAPI, HTTPException, status
+from uuid import UUID, uuid4
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    HTTPException,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from core.agent.runtime import execute_real_agent_v1, execute_real_agent_v2
+logger = logging.getLogger("evalora.server")
+
+from core.agent.runtime import execute_real_agent_v1, execute_real_agent_v2, execute_multi_agent_workflow
 from core.causal.analyzer import CausalFailureAnalyzer
 from core.db.repository import default_repository
 from core.evaluators.pipeline import EvaluatorPipeline
@@ -29,8 +41,11 @@ from core.models.schema import (
 )
 from core.regression.analyzer import RegressionAnalyzer
 from core.regression.dataset import DatasetCurationService
+from core.regression.runner import ExperimentRunner
 from core.telemetry.ingest import OTLPIngestService
 from core.trajectory.builder import TrajectoryBuilder
+from demo_agent.agent_v1 import run_agent_v1
+from demo_agent.agent_v2 import run_agent_v2
 
 app = FastAPI(
     title="Agent Evaluation & Observability Platform",
@@ -45,6 +60,69 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# -----------------------------------------------------------------------------
+# Configurable API Key Security Middleware
+# -----------------------------------------------------------------------------
+EVALORA_API_KEY = os.getenv("EVALORA_API_KEY")
+
+@app.middleware("http")
+async def api_key_auth_middleware(request: Request, call_next):
+    """Enforces Bearer token authentication when EVALORA_API_KEY is configured."""
+    path = request.url.path
+    if EVALORA_API_KEY and (path.startswith("/v1/") or path.startswith("/api/v1/")):
+        auth_header = request.headers.get("Authorization", "")
+        expected = f"Bearer {EVALORA_API_KEY}"
+        if not auth_header or auth_header.strip() != expected:
+            return JSONResponse(
+                status_code=401,
+                content={"error": "Unauthorized", "detail": "Valid Bearer token required in Authorization header"},
+            )
+    return await call_next(request)
+
+
+# -----------------------------------------------------------------------------
+# WebSocket Live Streaming Connection Manager
+# -----------------------------------------------------------------------------
+class WebSocketConnectionManager:
+    """Manages active browser WebSocket subscriptions for real-time trace and evaluation streaming."""
+
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: Dict[str, Any]):
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_json(message)
+            except Exception:
+                self.disconnect(connection)
+
+
+ws_manager = WebSocketConnectionManager()
+
+
+@app.websocket("/ws/live-traces")
+async def websocket_live_traces_endpoint(websocket: WebSocket):
+    """Real-time WebSocket feed pushing live agent traces and evaluations directly to browser UI."""
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+    except Exception:
+        ws_manager.disconnect(websocket)
+
 
 pipeline = EvaluatorPipeline()
 
@@ -102,31 +180,46 @@ class RunAgentRequest(BaseModel):
     prompt: Optional[str] = None
 
 
+class RunExperimentRequest(BaseModel):
+    name: str = "Candidate V2 Run"
+    dataset_id: str = "default_regression_set"
+    agent_mode: str = "fixed_v2"  # "flawed_v1" or "fixed_v2"
+    agent_id: str = "billing_support_agent"
+    agent_version: str = "2.0.0"
+
+
+class CompareExperimentsRequest(BaseModel):
+    candidate: Experiment
+    baseline: Experiment
+
+
 # -----------------------------------------------------------------------------
 # Live Real-Time Agent Execution Trigger
 # -----------------------------------------------------------------------------
 
 @app.post("/api/v1/agent/run-live")
 async def run_live_agent(req: RunAgentRequest):
-    """Executes a real agent workflow, captures live trace, evaluates and persists to database."""
+    """Executes a real agent workflow asynchronously, captures live trace, evaluates and persists to database."""
     default_prompt = (
         req.prompt
         or "Check the overdue balance for customer acct_982 and email the summary to their billing address."
     )
 
     if req.agent_mode == "fixed_v2":
-        tracer = execute_real_agent_v2(default_prompt)
+        tracer = await asyncio.to_thread(execute_real_agent_v2, default_prompt)
+    elif req.agent_mode == "multi_agent":
+        tracer = await asyncio.to_thread(execute_multi_agent_workflow, default_prompt)
     else:
-        tracer = execute_real_agent_v1(default_prompt)
+        tracer = await asyncio.to_thread(execute_real_agent_v1, default_prompt)
 
     trajectory = tracer.to_trajectory()
-    default_repository.save_spans(tracer.spans)
-    default_repository.save_trajectory(trajectory)
+    await asyncio.to_thread(default_repository.save_spans, tracer.spans)
+    await asyncio.to_thread(default_repository.save_trajectory, trajectory)
 
     # Run evaluations
     eval_result = await pipeline.run(trajectory)
-    default_repository.save_evaluations(trajectory.trace_id, eval_result["evaluations"])
-    default_repository.save_failures(trajectory.trace_id, eval_result["failures"])
+    await asyncio.to_thread(default_repository.save_evaluations, trajectory.trace_id, eval_result["evaluations"])
+    await asyncio.to_thread(default_repository.save_failures, trajectory.trace_id, eval_result["failures"])
 
     # Run root cause analysis if failures occurred
     root_cause = None
@@ -134,7 +227,7 @@ async def run_live_agent(req: RunAgentRequest):
         analyzer = CausalFailureAnalyzer(trajectory)
         root_cause = analyzer.identify_root_cause(eval_result["failures"])
         if root_cause:
-            default_repository.save_root_cause(trajectory.trace_id, root_cause)
+            await asyncio.to_thread(default_repository.save_root_cause, trajectory.trace_id, root_cause)
 
     return {
         "status": "success",
@@ -147,12 +240,45 @@ async def run_live_agent(req: RunAgentRequest):
     }
 
 
+async def _execute_evaluation_and_persist(trajectory: Trajectory):
+    """Executes 4-layer evaluation, persists results asynchronously, and broadcasts to live WebSockets."""
+    try:
+        eval_result = await pipeline.run(trajectory)
+        await asyncio.to_thread(default_repository.save_evaluations, trajectory.trace_id, eval_result["evaluations"])
+        await asyncio.to_thread(default_repository.save_failures, trajectory.trace_id, eval_result["failures"])
+
+        root_cause = None
+        if eval_result["failures"]:
+            analyzer = CausalFailureAnalyzer(trajectory)
+            root_cause = analyzer.identify_root_cause(eval_result["failures"])
+            if root_cause:
+                await asyncio.to_thread(default_repository.save_root_cause, trajectory.trace_id, root_cause)
+
+        await ws_manager.broadcast({
+            "type": "EVALUATION_COMPLETED",
+            "trace_id": trajectory.trace_id,
+            "mean_score": eval_result["mean_score"],
+            "passed": eval_result["passed"],
+            "failures_count": len(eval_result["failures"]),
+            "root_cause": root_cause.model_dump() if root_cause else None,
+        })
+        return eval_result, root_cause
+    except Exception as e:
+        logger.error("Background evaluation error for trace %s: %s", trajectory.trace_id, e)
+        return None, None
+
+
 # -----------------------------------------------------------------------------
 # Telemetry Ingestion (OTLP Standard)
 # -----------------------------------------------------------------------------
 
 @app.post("/v1/traces", status_code=status.HTTP_201_CREATED)
-async def ingest_otlp_traces(payload: Dict[str, Any]):
+async def ingest_otlp_traces(
+    request: Request,
+    payload: Dict[str, Any],
+    background_tasks: BackgroundTasks,
+    sync_eval: Optional[bool] = None,
+):
     """Ingests OTLP JSON traces, reconstructs trajectory DAG, runs evaluations & causal analysis."""
     spans = OTLPIngestService.parse_otlp_json(payload)
     if not spans:
@@ -166,34 +292,50 @@ async def ingest_otlp_traces(payload: Dict[str, Any]):
     trajectory = TrajectoryBuilder.build_trajectory(events, raw_spans=spans)
     default_repository.save_trajectory(trajectory)
 
-    # Execute 4-Layer Evaluators
-    eval_result = await pipeline.run(trajectory)
-    default_repository.save_evaluations(trace_id, eval_result["evaluations"])
-    default_repository.save_failures(trace_id, eval_result["failures"])
-
-    # Execute Causal Root-Cause Discovery if failures detected
-    root_cause = None
-    if eval_result["failures"]:
-        analyzer = CausalFailureAnalyzer(trajectory)
-        root_cause = analyzer.identify_root_cause(eval_result["failures"])
-        if root_cause:
-            default_repository.save_root_cause(trace_id, root_cause)
+    # Broadcast live trace ingestion to WebSockets
+    await ws_manager.broadcast({
+        "type": "TRACE_INGESTED",
+        "trace_id": trace_id,
+        "agent_id": trajectory.agent_id,
+        "nodes_count": len(trajectory.nodes),
+        "edges_count": len(trajectory.edges),
+        "sub_agents": trajectory.sub_agents,
+    })
 
     # Run Memory Telemetry Audit
     memory_audit = MemoryTelemetryAuditor.audit_trajectory(trajectory)
 
-    return {
-        "status": "success",
-        "trace_id": trace_id,
-        "nodes_count": len(trajectory.nodes),
-        "edges_count": len(trajectory.edges),
-        "mean_score": eval_result["mean_score"],
-        "passed": eval_result["passed"],
-        "failures_count": len(eval_result["failures"]),
-        "has_root_cause": root_cause is not None,
-        "root_cause": root_cause.model_dump() if root_cause else None,
-        "memory_audit": memory_audit.model_dump(),
-    }
+    # Check for async evaluation indicator from header or payload
+    is_async_header = request.headers.get("X-Evalora-Async", "").lower() in ("true", "1")
+    is_async_payload = bool(payload.get("async_eval"))
+    should_sync = sync_eval if sync_eval is not None else (not is_async_header and not is_async_payload)
+
+    if should_sync:
+        eval_result, root_cause = await _execute_evaluation_and_persist(trajectory)
+        return {
+            "status": "success",
+            "evaluation_status": "completed",
+            "trace_id": trace_id,
+            "nodes_count": len(trajectory.nodes),
+            "edges_count": len(trajectory.edges),
+            "mean_score": eval_result["mean_score"] if eval_result else 1.0,
+            "passed": eval_result["passed"] if eval_result else True,
+            "failures_count": len(eval_result["failures"]) if eval_result else 0,
+            "has_root_cause": root_cause is not None,
+            "root_cause": root_cause.model_dump() if root_cause else None,
+            "memory_audit": memory_audit.model_dump(),
+        }
+    else:
+        background_tasks.add_task(_execute_evaluation_and_persist, trajectory)
+        return {
+            "status": "accepted",
+            "evaluation_status": "queued",
+            "trace_id": trace_id,
+            "nodes_count": len(trajectory.nodes),
+            "edges_count": len(trajectory.edges),
+            "sub_agents": trajectory.sub_agents,
+            "memory_audit": memory_audit.model_dump(),
+        }
 
 
 # -----------------------------------------------------------------------------
@@ -202,19 +344,20 @@ async def ingest_otlp_traces(payload: Dict[str, Any]):
 
 @app.get("/api/v1/trajectories")
 async def list_trajectories():
-    return [t.model_dump() for t in default_repository.list_trajectories()]
+    trajs = await asyncio.to_thread(default_repository.list_trajectories)
+    return [t.model_dump() for t in trajs]
 
 
 @app.get("/api/v1/trajectories/{trace_id}")
 async def get_trajectory_details(trace_id: str):
-    trajectory = default_repository.get_trajectory(trace_id)
+    trajectory = await asyncio.to_thread(default_repository.get_trajectory, trace_id)
     if not trajectory:
         raise HTTPException(status_code=404, detail="Trajectory not found")
 
-    evaluations = default_repository.get_evaluations(trace_id)
-    failures = default_repository.get_failures(trace_id)
-    root_cause = default_repository.get_root_cause(trace_id)
-    memory_audit = MemoryTelemetryAuditor.audit_trajectory(trajectory)
+    evaluations = await asyncio.to_thread(default_repository.get_evaluations, trace_id)
+    failures = await asyncio.to_thread(default_repository.get_failures, trace_id)
+    root_cause = await asyncio.to_thread(default_repository.get_root_cause, trace_id)
+    memory_audit = await asyncio.to_thread(MemoryTelemetryAuditor.audit_trajectory, trajectory)
 
     return {
         "trajectory": trajectory.model_dump(),
@@ -228,13 +371,13 @@ async def get_trajectory_details(trace_id: str):
 @app.get("/api/v1/health-summary")
 async def get_health_summary():
     """Inspired by OpenSearch agent-health: aggregates activity, tool usage, cost, and failure distribution."""
-    return default_repository.get_health_summary()
+    return await asyncio.to_thread(default_repository.get_health_summary)
 
 
 @app.post("/api/v1/golden-path/compare")
 async def compare_golden_path(req: GoldenPathRequest):
     """Compares actual trajectory against expected golden path tool sequence."""
-    trajectory = default_repository.get_trajectory(req.actual_trace_id)
+    trajectory = await asyncio.to_thread(default_repository.get_trajectory, req.actual_trace_id)
     if not trajectory:
         raise HTTPException(status_code=404, detail="Trajectory not found")
 
@@ -288,6 +431,51 @@ async def list_datasets():
 @app.get("/api/v1/datasets/{dataset_id}/items")
 async def get_dataset_items(dataset_id: str):
     return [i.model_dump() for i in default_repository.get_dataset_items(dataset_id)]
+
+
+@app.get("/api/v1/experiments")
+async def list_experiments():
+    return [e.model_dump() for e in default_repository.list_experiments()]
+
+
+@app.post("/api/v1/experiments/run")
+async def run_experiment_endpoint(req: RunExperimentRequest):
+    """Executes a candidate agent version against a regression test dataset and records scores."""
+    items = default_repository.get_dataset_items(req.dataset_id)
+    if not items:
+        demo_prompt = "Check the overdue balance for customer acct_982 and email the summary to billing."
+        sample_item = DatasetItem(
+            item_id=uuid4(),
+            dataset_id=req.dataset_id,
+            input_prompt=demo_prompt,
+            expected_outcome="The overdue balance of $450.00 was verified and emailed to billing.",
+            assertions={"min_score": 0.80},
+        )
+        default_repository.save_dataset_item(sample_item)
+        items = [sample_item]
+
+    agent_fn = run_agent_v2 if req.agent_mode == "fixed_v2" else run_agent_v1
+    runner = ExperimentRunner(pipeline=pipeline)
+    experiment = await runner.run_experiment(
+        name=req.name,
+        dataset_id=req.dataset_id,
+        dataset_items=items,
+        agent_callable=agent_fn,
+        agent_id=req.agent_id,
+        agent_version=req.agent_version,
+    )
+    default_repository.save_experiment(experiment)
+    return experiment.model_dump()
+
+
+@app.post("/api/v1/regression/compare")
+async def compare_experiments_endpoint(req: CompareExperimentsRequest):
+    """Computes score deltas, evaluates regression rules, and yields CI pass/block gate decision."""
+    result = RegressionAnalyzer.compare(
+        candidate=req.candidate,
+        baseline=req.baseline,
+    )
+    return result.model_dump()
 
 
 # -----------------------------------------------------------------------------

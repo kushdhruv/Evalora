@@ -62,10 +62,20 @@ export function InspectorDrawer({
       {/* Header */}
       <div className="inspector-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <span className="badge badge-muted" style={{ fontSize: 9.5 }}>
               {node.event_type.toUpperCase()}
             </span>
+            {node.agent_id && (
+              <span className="badge badge-purple" style={{ fontSize: 9.5 }}>
+                Agent: {node.agent_id}
+              </span>
+            )}
+            {node.recipient_agent && (
+              <span className="badge badge-blue" style={{ fontSize: 9.5 }}>
+                → {node.recipient_agent}
+              </span>
+            )}
             <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
               {node.node_id}
             </span>

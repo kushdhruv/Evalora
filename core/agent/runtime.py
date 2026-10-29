@@ -172,3 +172,76 @@ def execute_real_agent_v2(prompt: str) -> AgentTracer:
         is_success=True,
     )
     return tracer
+
+
+def execute_multi_agent_workflow(prompt: str) -> AgentTracer:
+    """Multi-Agent collaborative workflow: Orchestrator decomposes tasks and delegates to specialists."""
+    tracer = AgentTracer(agent_id="orchestrator_agent", agent_version="1.0.0")
+
+    # 1. Orchestrator records high-level decomposition plan
+    tracer.record_plan(
+        plan_content=f"Decompose request '{prompt}' into database query and customer notification subtasks.",
+        steps=["Delegate SQL retrieval to database_specialist", "Delegate notification to comms_specialist", "Synthesize final outcome"],
+    )
+
+    # 2. Orchestrator delegates to SQL Specialist
+    tracer.record_agent_delegation(
+        delegator="orchestrator_agent",
+        delegatee="database_specialist",
+        task=f"Retrieve financial balance and email for acct_982 according to: {prompt}",
+    )
+
+    # 3. SQL Specialist executes query tool
+    valid_query = """
+        SELECT i.balance, c.email 
+        FROM invoices i 
+        JOIN customers c ON i.customer_id = c.id 
+        WHERE i.acct_id = 'acct_982'
+    """
+    rows = tracer.execute_tool(
+        tool_name="sqlite_query",
+        tool_fn=tool_run_sqlite,
+        agent_id="database_specialist",
+        query=valid_query,
+    )
+
+    balance = rows[0]["balance"]
+    email = rows[0]["email"]
+
+    # 4. Database Specialist messages Orchestrator with result
+    tracer.record_agent_message(
+        sender="database_specialist",
+        recipient="orchestrator_agent",
+        content=f"Query completed: verified overdue balance of ${balance:.2f} for customer {email}.",
+    )
+
+    # 5. Orchestrator delegates to Comms Specialist
+    tracer.record_agent_delegation(
+        delegator="orchestrator_agent",
+        delegatee="comms_specialist",
+        task=f"Dispatch formal overdue statement of ${balance:.2f} to {email}.",
+    )
+
+    # 6. Comms Specialist dispatches email
+    tracer.execute_tool(
+        tool_name="send_email",
+        tool_fn=tool_send_email,
+        agent_id="comms_specialist",
+        to=email,
+        subject="Overdue Balance Notice",
+        body=f"Dear Customer, your overdue balance is ${balance:.2f}.",
+    )
+
+    # 7. Comms Specialist reports back to Orchestrator
+    tracer.record_agent_message(
+        sender="comms_specialist",
+        recipient="orchestrator_agent",
+        content=f"Dispatched email confirmation to {email}.",
+    )
+
+    # 8. Orchestrator synthesizes final outcome
+    tracer.record_outcome(
+        outcome_text=f"Multi-agent task complete: Verified balance ${balance:.2f} via database_specialist and dispatched email to {email} via comms_specialist.",
+        is_success=True,
+    )
+    return tracer

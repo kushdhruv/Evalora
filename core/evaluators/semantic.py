@@ -1,16 +1,26 @@
-"""core/evaluators/semantic.py: Layer 2 Semantic Evaluator."""
+"""core/evaluators/semantic.py: Layer 2 Semantic Evaluator with Vector Embedding & Lexical Grounding."""
 
 import math
+import os
 import re
 from typing import Dict, List, Optional, Set
 from core.evaluators.base import BaseEvaluator
 from core.models.schema import Evaluation, EventType, Trajectory, TrajectoryNode
+
+try:
+    import litellm
+    HAS_LITELLM = True
+except ImportError:
+    HAS_LITELLM = False
 
 
 class SemanticEvaluator(BaseEvaluator):
     name: str = "semantic_similarity"
     layer: str = "semantic"
     version: str = "1.0.0"
+
+    def __init__(self, embedding_model: Optional[str] = None):
+        self.embedding_model = embedding_model or os.getenv("EMBEDDING_MODEL", "gemini/gemini-embedding-001")
 
     def _tokenize(self, text: str) -> Set[str]:
         words = re.findall(r"\b\w{3,}\b", text.lower())
@@ -23,6 +33,30 @@ class SemanticEvaluator(BaseEvaluator):
         union = len(s1.union(s2))
         return intersection / union if union > 0 else 0.0
 
+    def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
+        if not vec1 or not vec2 or len(vec1) != len(vec2):
+            return 0.0
+        dot = sum(a * b for a, b in zip(vec1, vec2))
+        norm1 = math.sqrt(sum(a * a for a in vec1))
+        norm2 = math.sqrt(sum(b * b for b in vec2))
+        if norm1 == 0.0 or norm2 == 0.0:
+            return 0.0
+        return max(0.0, min(1.0, dot / (norm1 * norm2)))
+
+    async def _compute_embedding_similarity(self, text1: str, text2: str) -> Optional[float]:
+        if not HAS_LITELLM or not os.getenv("GEMINI_API_KEY"):
+            return None
+        try:
+            res = await litellm.aembedding(
+                model=self.embedding_model,
+                input=[text1[:1000], text2[:1000]],
+            )
+            vec1 = res.data[0]["embedding"]
+            vec2 = res.data[1]["embedding"]
+            return self._cosine_similarity(vec1, vec2)
+        except Exception:
+            return None
+
     async def evaluate_node(
         self, node: TrajectoryNode, trajectory: Trajectory
     ) -> Optional[Evaluation]:
@@ -33,14 +67,25 @@ class SemanticEvaluator(BaseEvaluator):
             retrieved = mem_data.get("retrieved_content") or []
             scores = mem_data.get("similarity_scores") or []
 
+            confidence = 0.85
+            method = "lexical_jaccard"
+
             if scores:
                 avg_score = sum(scores) / len(scores)
                 score = min(1.0, max(0.0, avg_score))
+                method = "reported_vector_similarity"
             elif query and retrieved:
-                q_tokens = self._tokenize(query)
                 r_text = " ".join([str(item) for item in retrieved])
-                r_tokens = self._tokenize(r_text)
-                score = self._jaccard_similarity(q_tokens, r_tokens)
+                # Attempt vector embedding similarity if API key is present
+                vec_sim = await self._compute_embedding_similarity(query, r_text)
+                if vec_sim is not None:
+                    score = vec_sim
+                    method = "gemini_vector_embedding"
+                    confidence = 0.95
+                else:
+                    q_tokens = self._tokenize(query)
+                    r_tokens = self._tokenize(r_text)
+                    score = self._jaccard_similarity(q_tokens, r_tokens)
             else:
                 score = 0.5
 
@@ -53,10 +98,10 @@ class SemanticEvaluator(BaseEvaluator):
                 evaluator_layer=self.layer,
                 evaluator_version=self.version,
                 score=round(score, 3),
-                confidence=0.85,
+                confidence=confidence,
                 passed=passed,
-                rationale=f"Semantic retrieval relevance score: {score:.2f}",
-                details={"scores": scores},
+                rationale=f"Semantic retrieval relevance score ({method}): {score:.2f}",
+                details={"scores": scores, "method": method},
             )
 
         return None

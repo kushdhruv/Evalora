@@ -126,6 +126,61 @@ export function App() {
     return () => clearInterval(interval);
   }, [autoSync, page]);
 
+  // Real-Time WebSocket Streaming Listener
+  const [isWsConnected, setIsWsConnected] = useState<boolean>(false);
+
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: any = null;
+
+    const connectWebSocket = () => {
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host || 'localhost:8000';
+        ws = new WebSocket(`${protocol}//${host}/ws/live-traces`);
+
+        ws.onopen = () => {
+          setIsWsConnected(true);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'TRACE_INGESTED' || data.type === 'EVALUATION_COMPLETED') {
+              fetchHealthSummary().then(setHealthSummary).catch(() => {});
+              fetchTrajectories().then(setTrajectories).catch(() => {});
+              if (activeTraceId && data.trace_id === activeTraceId) {
+                fetchTrajectoryDetails(activeTraceId).then(setActiveDetail).catch(() => {});
+              }
+            }
+          } catch (e) {
+            console.error('WS message parse error:', e);
+          }
+        };
+
+        ws.onclose = () => {
+          setIsWsConnected(false);
+          reconnectTimeout = setTimeout(connectWebSocket, 4000);
+        };
+
+        ws.onerror = () => {
+          setIsWsConnected(false);
+          ws?.close();
+        };
+      } catch (err) {
+        setIsWsConnected(false);
+        reconnectTimeout = setTimeout(connectWebSocket, 5000);
+      }
+    };
+
+    connectWebSocket();
+
+    return () => {
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (ws) ws.close();
+    };
+  }, [activeTraceId]);
+
   // High-performance deferred search & memoized filtering
   const deferredSearch = React.useDeferredValue(searchQuery);
 
@@ -195,6 +250,33 @@ export function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* WebSocket Status Indicator */}
+          <span
+            className="badge"
+            style={{
+              fontSize: 9.5,
+              background: isWsConnected ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+              color: isWsConnected ? 'var(--color-green, #22c55e)' : 'var(--color-yellow, #eab308)',
+              border: `1px solid ${isWsConnected ? 'rgba(34, 197, 94, 0.3)' : 'rgba(234, 179, 8, 0.3)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+            }}
+            title={isWsConnected ? 'Real-Time WebSocket Stream Connected' : 'Polling HTTP Fallback Active'}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: isWsConnected ? '#22c55e' : '#eab308',
+                display: 'inline-block',
+                boxShadow: isWsConnected ? '0 0 6px #22c55e' : 'none',
+              }}
+            />
+            {isWsConnected ? 'WS STREAMING' : 'POLLING'}
+          </span>
+
           {/* Live Auto-Sync Toggle */}
           <button
             onClick={() => setAutoSync(!autoSync)}

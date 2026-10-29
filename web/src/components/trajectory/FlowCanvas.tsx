@@ -12,7 +12,7 @@ import {
 import type { Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { PlanNode, ToolCallNode, MemoryNode, OutcomeNode } from '../nodes/CustomNodes';
+import { PlanNode, ToolCallNode, MemoryNode, OutcomeNode, AgentMessageNode } from '../nodes/CustomNodes';
 import { getLayoutedElements } from '../../utils/layout';
 import type { TrajectoryDetailResponse, TrajectoryNode } from '../../types';
 import { LayoutGrid, Rows } from 'lucide-react';
@@ -26,6 +26,8 @@ const nodeTypes = {
   reasoning: PlanNode,
   state_update: PlanNode,
   observation: PlanNode,
+  agent_message: AgentMessageNode,
+  agent_delegate: AgentMessageNode,
 };
 
 interface FlowCanvasProps {

@@ -151,7 +151,7 @@ Respond ONLY in valid JSON matching this exact structure:
 
             if self.custom_judge_fn:
                 res = self.custom_judge_fn(context)
-            elif HAS_LITELLM and self._has_live_llm_key():
+            elif HAS_LITELLM and self._has_live_llm_key() and not self.model_name.startswith("heuristic"):
                 res = await self._evaluate_with_live_llm(context)
             else:
                 res = self._default_heuristic_judge(context)
@@ -187,7 +187,7 @@ Respond ONLY in valid JSON matching this exact structure:
             }
             if self.custom_judge_fn:
                 res = self.custom_judge_fn(context)
-            elif HAS_LITELLM and self._has_live_llm_key():
+            elif HAS_LITELLM and self._has_live_llm_key() and not self.model_name.startswith("heuristic"):
                 res = await self._evaluate_with_live_llm(context)
             else:
                 res = self._default_heuristic_judge(context)

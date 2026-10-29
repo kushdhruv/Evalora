@@ -23,8 +23,19 @@ class RegressionAnalyzer:
         baseline_failures = baseline.total_samples - baseline.passed_samples
         candidate_failures = candidate.total_samples - candidate.passed_samples
 
-        new_failures = max(0, candidate_failures - baseline_failures)
-        resolved_failures = max(0, baseline_failures - candidate_failures)
+        if baseline.total_samples == candidate.total_samples:
+            new_failures = max(0, candidate_failures - baseline_failures)
+            resolved_failures = max(0, baseline_failures - candidate_failures)
+        else:
+            # When dataset sizes differ between experiments, normalize using relative failure rates
+            b_rate = baseline_failures / max(1, baseline.total_samples)
+            c_rate = candidate_failures / max(1, candidate.total_samples)
+            if c_rate > b_rate:
+                new_failures = max(1, int(round((c_rate - b_rate) * candidate.total_samples)))
+                resolved_failures = 0
+            else:
+                new_failures = 0
+                resolved_failures = max(0, int(round((b_rate - c_rate) * candidate.total_samples)))
 
         # Gate decision evaluation
         gate_decision = GateDecision.PASS

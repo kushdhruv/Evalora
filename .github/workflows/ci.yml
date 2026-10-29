@@ -1,0 +1,38 @@
+name: Evalora CI Quality Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-gate:
+    name: Automated Tests & Quality Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+          pip install pytest pytest-asyncio
+
+      - name: Run Pytest Test Suite
+        run: |
+          pytest tests/ -v
+
+      - name: Enforce CI/CD Regression Quality Gate
+        run: |
+          python -m cli.main gate --candidate-score 0.93 --baseline-score 0.60 --candidate-version 2.0.0 --baseline-version 1.0.0
+

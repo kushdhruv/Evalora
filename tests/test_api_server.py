@@ -96,3 +96,14 @@ async def test_otlp_ingestion_and_trajectory_api():
         assert res_dash.status_code == 200
         assert "Agent Health" in res_dash.text
         assert "Trajectory Observability" in res_dash.text
+
+        # 6. Test run live multi-agent endpoint
+        res_live = await client.post(
+            "/api/v1/agent/run-live",
+            json={"agent_mode": "multi_agent", "prompt": "Process customer billing record"},
+        )
+        assert res_live.status_code == 200
+        live_data = res_live.json()
+        assert live_data["agent_mode"] == "multi_agent"
+        assert live_data["nodes_count"] >= 6
+        assert live_data["passed"] is True

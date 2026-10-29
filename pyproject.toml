@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evalora"
+version = "1.0.0"
+description = "Universal AI Agent Observability & Evaluation Platform Plugin"
+readme = "README.md"
+authors = [{ name = "Evalora Team" }]
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "pydantic>=2.0.0",
+    "networkx>=3.0",
+    "sqlalchemy>=2.0.0",
+    "uvicorn>=0.30.0",
+    "litellm>=1.40.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["evalora*", "core*"]
+

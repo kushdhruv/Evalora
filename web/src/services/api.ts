@@ -85,7 +85,7 @@ export async function compareGoldenPath(
   return res.json();
 }
 
-export async function runLiveAgent(agentMode: 'flawed_v1' | 'fixed_v2', prompt?: string): Promise<any> {
+export async function runLiveAgent(agentMode: 'flawed_v1' | 'fixed_v2' | 'multi_agent', prompt?: string): Promise<any> {
   const res = await fetch(`${BASE_URL}/api/v1/agent/run-live`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

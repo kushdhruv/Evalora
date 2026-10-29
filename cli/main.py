@@ -39,6 +39,17 @@ def health():
 
 
 @app.command()
+def seed():
+    """Seed the database with sample trajectories: flawed V1 cascade and remediated V2 run."""
+    import asyncio
+    from demo_agent.run_demo import main as run_demo_main
+
+    console.print("[cyan]Seeding database with sample trajectories and regression suite...[/cyan]")
+    asyncio.run(run_demo_main())
+    console.print("[bold green]✅ Database successfully seeded![/bold green]")
+
+
+@app.command()
 def gate(
     dataset_id: str = typer.Option("default_regression_set", help="Dataset identifier"),
     candidate_score: float = typer.Option(0.92, help="Candidate agent mean score"),

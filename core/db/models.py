@@ -63,6 +63,8 @@ class DBTrajectory(Base):
     trace_id = Column(String(64), ForeignKey("traces.trace_id"), unique=True, index=True)
     agent_id = Column(String(128), default="agent_under_test")
     agent_version = Column(String(32), default="1.0.0")
+    session_id = Column(String(128), nullable=True, index=True)
+    sub_agents = Column(JSON, default=list)
     nodes = Column(JSON, default=list)
     edges = Column(JSON, default=list)
     total_latency_ms = Column(Float, default=0.0)

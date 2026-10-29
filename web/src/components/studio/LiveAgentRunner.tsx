@@ -1,7 +1,7 @@
 // web/src/components/studio/LiveAgentRunner.tsx - Clean Minimalist Live Agent Runner Studio
 
 import React, { useState } from 'react';
-import { Bug, CheckCircle, Sparkles, RefreshCw } from 'lucide-react';
+import { Bug, CheckCircle, Sparkles, RefreshCw, Users } from 'lucide-react';
 import { runLiveAgent } from '../../services/api';
 
 interface LiveAgentRunnerProps {
@@ -15,7 +15,7 @@ export function LiveAgentRunner({ onRunComplete }: LiveAgentRunnerProps) {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [lastResult, setLastResult] = useState<any | null>(null);
 
-  const handleRun = async (mode: 'flawed_v1' | 'fixed_v2') => {
+  const handleRun = async (mode: 'flawed_v1' | 'fixed_v2' | 'multi_agent') => {
     setIsRunning(true);
     setLastResult(null);
     try {
@@ -91,6 +91,17 @@ export function LiveAgentRunner({ onRunComplete }: LiveAgentRunnerProps) {
         >
           {isRunning ? <RefreshCw size={11} className="animate-spin" /> : <CheckCircle size={12} />}
           Run Fixed Agent (v2)
+        </button>
+
+        <button
+          onClick={() => handleRun('multi_agent')}
+          disabled={isRunning}
+          className="btn"
+          style={{ whiteSpace: 'nowrap', background: 'var(--color-blue, #2563eb)', color: '#fff', border: '1px solid #1d4ed8' }}
+          title="Executes Multi-Agent Collaborative Fleet (Orchestrator -> Specialists)"
+        >
+          {isRunning ? <RefreshCw size={11} className="animate-spin" /> : <Users size={12} />}
+          Run Multi-Agent Fleet
         </button>
       </div>
 

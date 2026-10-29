@@ -16,6 +16,8 @@ class EventType(str, Enum):
     REASONING = "reasoning"
     STATE_TRANSITION = "state_transition"
     FINAL_OUTCOME = "final_outcome"
+    AGENT_MESSAGE = "agent_message"      # Multi-agent chat communication
+    AGENT_DELEGATE = "agent_delegate"    # Supervisor -> worker handoff / delegation
 
 
 class FailureCategory(str, Enum):
@@ -84,6 +86,9 @@ class AgentEvent(BaseModel):
     state_snapshot: Dict[str, Any] = Field(default_factory=dict)
     tool_call: Optional[ToolCall] = None
     memory_event: Optional[MemoryEvent] = None
+    sender_agent: Optional[str] = None
+    recipient_agent: Optional[str] = None
+    session_id: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -97,21 +102,25 @@ class TrajectoryNode(BaseModel):
     event_type: EventType
     label: str
     timestamp: datetime
+    agent_id: Optional[str] = None
+    recipient_agent: Optional[str] = None
     payload: Dict[str, Any] = Field(default_factory=dict)
 
 
 class TrajectoryEdge(BaseModel):
     source_node_id: str
     target_node_id: str
-    edge_type: str = "temporal_sequence"  # "call_parent", "data_dependency", "temporal_sequence"
+    edge_type: str = "temporal_sequence"  # "call_parent", "data_dependency", "temporal_sequence", "agent_delegation", "agent_message"
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class Trajectory(BaseModel):
     trajectory_id: UUID = Field(default_factory=uuid4)
     trace_id: str
-    agent_id: str
+    agent_id: str = "agent_under_test"
     agent_version: str = "1.0.0"
+    session_id: Optional[str] = None
+    sub_agents: List[str] = Field(default_factory=list)
     nodes: List[TrajectoryNode] = Field(default_factory=list)
     edges: List[TrajectoryEdge] = Field(default_factory=list)
     total_latency_ms: float = 0.0

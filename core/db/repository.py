@@ -1,5 +1,8 @@
 """core/db/repository.py: Persistent Database Repository with SQLite/Postgres backing."""
 
+import random
+import time
+from functools import wraps
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 from sqlalchemy.orm import Session
@@ -34,6 +37,31 @@ from core.models.schema import (
 init_db()
 
 
+def with_db_retry(max_retries: int = 5, initial_backoff: float = 0.05, backoff_factor: float = 2.0):
+    """Retries database operations upon database locks, deadlocks, or concurrency contention."""
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            last_err = None
+            delay = initial_backoff
+            for attempt in range(max_retries):
+                try:
+                    return fn(*args, **kwargs)
+                except Exception as e:
+                    err_msg = str(e).lower()
+                    if ("locked" in err_msg or "busy" in err_msg or "deadlock" in err_msg) and attempt < max_retries - 1:
+                        last_err = e
+                        jitter = random.uniform(0.5, 1.5)
+                        time.sleep(delay * jitter)
+                        delay *= backoff_factor
+                        continue
+                    raise
+            if last_err:
+                raise last_err
+        return wrapper
+    return decorator
+
+
 class PersistentRepository:
     """Thread-safe persistent repository storing traces, evaluations, and datasets to disk."""
 
@@ -43,6 +71,7 @@ class PersistentRepository:
     def _get_session(self) -> Session:
         return self._session_factory()
 
+    @with_db_retry()
     def save_spans(self, spans: List[Span]):
         if not spans:
             return
@@ -76,6 +105,7 @@ class PersistentRepository:
         finally:
             session.close()
 
+    @with_db_retry()
     def save_trajectory(self, trajectory: Trajectory):
         session = self._get_session()
         try:
@@ -104,6 +134,8 @@ class PersistentRepository:
             edges_data = [e.model_dump(mode="json") for e in trajectory.edges]
 
             if existing_traj:
+                existing_traj.session_id = trajectory.session_id
+                existing_traj.sub_agents = trajectory.sub_agents
                 existing_traj.nodes = nodes_data
                 existing_traj.edges = edges_data
                 existing_traj.total_latency_ms = trajectory.total_latency_ms
@@ -116,6 +148,8 @@ class PersistentRepository:
                     trace_id=trajectory.trace_id,
                     agent_id=trajectory.agent_id,
                     agent_version=trajectory.agent_version,
+                    session_id=trajectory.session_id,
+                    sub_agents=trajectory.sub_agents,
                     nodes=nodes_data,
                     edges=edges_data,
                     total_latency_ms=trajectory.total_latency_ms,
@@ -144,6 +178,8 @@ class PersistentRepository:
                 trace_id=db_traj.trace_id,
                 agent_id=db_traj.agent_id,
                 agent_version=db_traj.agent_version,
+                session_id=getattr(db_traj, "session_id", None),
+                sub_agents=getattr(db_traj, "sub_agents", []) or [],
                 nodes=[TrajectoryNode.model_validate(n) for n in raw_nodes],
                 edges=[TrajectoryEdge.model_validate(e) for e in raw_edges],
                 total_latency_ms=db_traj.total_latency_ms,
@@ -169,6 +205,8 @@ class PersistentRepository:
                         trace_id=t.trace_id,
                         agent_id=t.agent_id,
                         agent_version=t.agent_version,
+                        session_id=getattr(t, "session_id", None),
+                        sub_agents=getattr(t, "sub_agents", []) or [],
                         nodes=[TrajectoryNode.model_validate(n) for n in raw_nodes],
                         edges=[TrajectoryEdge.model_validate(e) for e in raw_edges],
                         total_latency_ms=t.total_latency_ms,
@@ -182,6 +220,7 @@ class PersistentRepository:
         finally:
             session.close()
 
+    @with_db_retry()
     def save_evaluations(self, trace_id: str, evals: List[Evaluation]):
         if not evals:
             return
@@ -235,6 +274,7 @@ class PersistentRepository:
         finally:
             session.close()
 
+    @with_db_retry()
     def save_failures(self, trace_id: str, failures: List[Failure]):
         if not failures:
             return
@@ -279,6 +319,7 @@ class PersistentRepository:
         finally:
             session.close()
 
+    @with_db_retry()
     def save_root_cause(self, trace_id: str, root_cause: RootCause):
         session = self._get_session()
         try:
@@ -325,6 +366,7 @@ class PersistentRepository:
         finally:
             session.close()
 
+    @with_db_retry()
     def save_dataset_item(self, item: DatasetItem):
         session = self._get_session()
         try:
@@ -376,6 +418,56 @@ class PersistentRepository:
             for i in items:
                 counts[i.dataset_id] = counts.get(i.dataset_id, 0) + 1
             return counts
+        finally:
+            session.close()
+
+    @with_db_retry()
+    def save_experiment(self, exp: Experiment):
+        session = self._get_session()
+        try:
+            db_exp = DBExperiment(
+                experiment_id=str(exp.experiment_id),
+                name=exp.name,
+                dataset_id=exp.dataset_id,
+                agent_id=exp.agent_id,
+                agent_version=exp.agent_version,
+                evaluator_config=exp.evaluator_config,
+                total_samples=exp.total_samples,
+                passed_samples=exp.passed_samples,
+                mean_score=exp.mean_score,
+                mean_cost_usd=exp.mean_cost_usd,
+                mean_latency_ms=exp.mean_latency_ms,
+                created_at=exp.created_at,
+            )
+            session.add(db_exp)
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def list_experiments(self) -> List[Experiment]:
+        session = self._get_session()
+        try:
+            db_exps = session.query(DBExperiment).order_by(DBExperiment.created_at.desc()).all()
+            return [
+                Experiment(
+                    experiment_id=UUID(e.experiment_id),
+                    name=e.name,
+                    dataset_id=e.dataset_id,
+                    agent_id=e.agent_id,
+                    agent_version=e.agent_version,
+                    evaluator_config=e.evaluator_config or {},
+                    total_samples=e.total_samples,
+                    passed_samples=e.passed_samples,
+                    mean_score=e.mean_score,
+                    mean_cost_usd=e.mean_cost_usd,
+                    mean_latency_ms=e.mean_latency_ms,
+                    created_at=e.created_at,
+                )
+                for e in db_exps
+            ]
         finally:
             session.close()
 

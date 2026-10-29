@@ -38,10 +38,11 @@ class EvaluatorPipeline:
         fatal_short_circuit = False
 
         # -------------------------------------------------------------
-        # STEP 1: Layer 1 Deterministic Evaluator (Hard Gate)
+        # STEP 1: Layer 1 Deterministic Evaluator (Hard Gate - Concurrent)
         # -------------------------------------------------------------
-        for node in trajectory.nodes:
-            eval_res = await self.deterministic.evaluate_node(node, trajectory)
+        det_tasks = [self.deterministic.evaluate_node(node, trajectory) for node in trajectory.nodes]
+        det_results = await asyncio.gather(*det_tasks)
+        for node, eval_res in zip(trajectory.nodes, det_results):
             if eval_res:
                 evaluations.append(eval_res)
                 if not eval_res.passed:
@@ -61,34 +62,32 @@ class EvaluatorPipeline:
                     if eval_res.score == 0.0:
                         fatal_short_circuit = True
 
-        traj_det = await self.deterministic.evaluate_trajectory(trajectory)
-        if traj_det:
-            evaluations.append(traj_det)
-
         # -------------------------------------------------------------
-        # STEP 2: Layer 2 Semantic Evaluator
+        # STEP 2: Layer 2 Semantic Evaluator (Concurrent)
         # -------------------------------------------------------------
-        for node in trajectory.nodes:
-            sem_res = await self.semantic.evaluate_node(node, trajectory)
+        sem_tasks = [self.semantic.evaluate_node(node, trajectory) for node in trajectory.nodes]
+        sem_results = await asyncio.gather(*sem_tasks)
+        for sem_res in sem_results:
             if sem_res:
                 evaluations.append(sem_res)
 
-        traj_sem = await self.semantic.evaluate_trajectory(trajectory)
-        if traj_sem:
-            evaluations.append(traj_sem)
+        # -------------------------------------------------------------
+        # STEP 3: Layer 3 LLM Judge (Concurrent with Semaphore)
+        # -------------------------------------------------------------
+        judge_sem = asyncio.Semaphore(5)
 
-        # -------------------------------------------------------------
-        # STEP 3: Layer 3 LLM Judge (Skipped if fatal deterministic error occurred on node)
-        # -------------------------------------------------------------
-        for node in trajectory.nodes:
-            # Check if this node already experienced fatal deterministic failure
+        async def _eval_judge(node: TrajectoryNode):
             node_has_fatal = any(
                 f.node_id == node.node_id and f.severity == "FATAL" for f in failures
             )
             if node_has_fatal:
-                continue  # Save compute and avoid LLM judging already broken steps
+                return None
+            async with judge_sem:
+                return await self.llm_judge.evaluate_node(node, trajectory)
 
-            judge_res = await self.llm_judge.evaluate_node(node, trajectory)
+        judge_tasks = [_eval_judge(node) for node in trajectory.nodes]
+        judge_results = await asyncio.gather(*judge_tasks)
+        for node, judge_res in zip(trajectory.nodes, judge_results):
             if judge_res:
                 evaluations.append(judge_res)
                 if not judge_res.passed:
@@ -111,16 +110,19 @@ class EvaluatorPipeline:
                         )
                     )
 
-        traj_judge = await self.llm_judge.evaluate_trajectory(trajectory)
-        if traj_judge:
-            evaluations.append(traj_judge)
-
         # -------------------------------------------------------------
-        # STEP 4: Layer 4 Trajectory Graph Evaluator
+        # STEP 4: Trajectory-Level Multi-Layer Evaluators (Concurrent)
         # -------------------------------------------------------------
-        traj_graph = await self.trajectory_eval.evaluate_trajectory(trajectory)
-        if traj_graph:
-            evaluations.append(traj_graph)
+        traj_tasks = [
+            self.deterministic.evaluate_trajectory(trajectory),
+            self.semantic.evaluate_trajectory(trajectory),
+            self.llm_judge.evaluate_trajectory(trajectory),
+            self.trajectory_eval.evaluate_trajectory(trajectory),
+        ]
+        traj_results = await asyncio.gather(*traj_tasks)
+        for tr in traj_results:
+            if tr:
+                evaluations.append(tr)
 
         # -------------------------------------------------------------
         # STEP 5: Aggregation & Weighted Scoring

@@ -108,6 +108,7 @@ export function TimelineWaterfall({ detail, selectedNodeId, onSelectNode }: Time
           if (item.event_type === 'tool_call') barColor = isError ? 'var(--rose)' : 'var(--amber)';
           else if (item.event_type.startsWith('memory')) barColor = 'var(--purple)';
           else if (item.event_type === 'final_outcome') barColor = isError ? 'var(--rose)' : 'var(--emerald)';
+          else if (item.event_type.startsWith('agent_')) barColor = 'var(--color-blue, #3b82f6)';
 
           return (
             <div
@@ -156,12 +157,19 @@ export function TimelineWaterfall({ detail, selectedNodeId, onSelectNode }: Time
                           : 'badge-emerald'
                         : item.event_type.startsWith('memory')
                         ? 'badge-purple'
+                        : item.event_type.startsWith('agent_')
+                        ? 'badge-blue'
                         : 'badge-muted'
                     }`}
                     style={{ fontSize: 9 }}
                   >
                     {item.event_type.toUpperCase()}
                   </span>
+                  {(item.agent_id || item.recipient_agent) && (
+                    <span className="badge badge-purple" style={{ fontSize: 8.5 }}>
+                      {item.agent_id || 'Agent'}{item.recipient_agent ? ` → ${item.recipient_agent}` : ''}
+                    </span>
+                  )}
                   <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
                     {item.label}
                   </span>

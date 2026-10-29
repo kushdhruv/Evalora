@@ -1,4 +1,27 @@
-"""core/sdk/__init__.py"""
-from core.sdk.tracer import AgentTracer, trace_agent_execution
+"""core/sdk/__init__.py: Evalora SDK & Observability Plugin."""
 
-__all__ = ["AgentTracer", "trace_agent_execution"]
+from core.sdk.tracer import (
+    AgentLoopException,
+    AgentTracer,
+    CircuitBreaker,
+    EvaloraClient,
+    evalora,
+    get_current_tracer,
+    observe,
+    sanitize_pii,
+    set_current_tracer,
+    trace_agent_execution,
+)
+
+__all__ = [
+    "AgentLoopException",
+    "AgentTracer",
+    "CircuitBreaker",
+    "EvaloraClient",
+    "evalora",
+    "get_current_tracer",
+    "observe",
+    "sanitize_pii",
+    "set_current_tracer",
+    "trace_agent_execution",
+]

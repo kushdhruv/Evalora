@@ -28,10 +28,14 @@ class TrajectoryBuilder:
             return Trajectory(trace_id="empty", agent_id=agent_id, agent_version=agent_version)
 
         trace_id = events[0].trace_id
+        session_id = events[0].session_id or None
         nodes: List[TrajectoryNode] = []
         edges: List[TrajectoryEdge] = []
         span_to_node_id: Dict[str, str] = {}
         node_outputs: Dict[str, str] = {}
+        sub_agents = set()
+        if agent_id:
+            sub_agents.add(agent_id)
 
         total_latency_ms = 0.0
         total_tokens = 0
@@ -44,7 +48,24 @@ class TrajectoryBuilder:
             span_to_node_id[ev.span_id] = node_id
 
             label = f"{ev.event_type.value.upper()}"
-            if ev.tool_call:
+            if ev.sender_agent:
+                sub_agents.add(ev.sender_agent)
+            if ev.recipient_agent:
+                sub_agents.add(ev.recipient_agent)
+
+            if ev.event_type == EventType.AGENT_MESSAGE:
+                sender = ev.sender_agent or "Agent"
+                recipient = ev.recipient_agent or "Peer"
+                label = f"Chat: {sender} ➔ {recipient}"
+                if ev.content:
+                    node_outputs[node_id] = ev.content
+            elif ev.event_type == EventType.AGENT_DELEGATE:
+                sender = ev.sender_agent or "Supervisor"
+                recipient = ev.recipient_agent or "Worker"
+                label = f"Delegate: {sender} ➔ {recipient}"
+                if ev.content:
+                    node_outputs[node_id] = ev.content
+            elif ev.tool_call:
                 label = f"Tool: {ev.tool_call.tool_name}"
                 total_latency_ms += ev.tool_call.execution_time_ms
                 if ev.tool_call.is_error:
@@ -70,6 +91,9 @@ class TrajectoryBuilder:
                 "event_type": ev.event_type.value,
                 "content": ev.content,
                 "span_id": ev.span_id,
+                "sender_agent": ev.sender_agent,
+                "recipient_agent": ev.recipient_agent,
+                "session_id": ev.session_id,
             }
             if ev.tool_call:
                 payload["tool_call"] = ev.tool_call.model_dump()
@@ -83,6 +107,8 @@ class TrajectoryBuilder:
                     event_type=ev.event_type,
                     label=label,
                     timestamp=ev.timestamp,
+                    agent_id=ev.sender_agent or agent_id,
+                    recipient_agent=ev.recipient_agent,
                     payload=payload,
                 )
             )
@@ -139,6 +165,8 @@ class TrajectoryBuilder:
             trace_id=trace_id,
             agent_id=agent_id,
             agent_version=agent_version,
+            session_id=session_id,
+            sub_agents=sorted(list(sub_agents)),
             nodes=nodes,
             edges=edges,
             total_latency_ms=round(total_latency_ms, 2),
