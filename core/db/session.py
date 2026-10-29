@@ -20,15 +20,11 @@ engine_kwargs = {"pool_pre_ping": True}
 
 if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False, "timeout": 60.0}
-    # pyrefly: ignore[bad-assignment]
     engine_kwargs["connect_args"] = connect_args
     if ":memory:" in DATABASE_URL:
-        # pyrefly: ignore[bad-assignment]
         engine_kwargs["poolclass"] = StaticPool
 else:
-    # pyrefly: ignore[bad-assignment]
     engine_kwargs["pool_size"] = int(os.getenv("DB_POOL_SIZE", "10"))
-    # pyrefly: ignore[bad-assignment]
     engine_kwargs["max_overflow"] = int(os.getenv("DB_MAX_OVERFLOW", "20"))
 
 engine = create_engine(

@@ -419,7 +419,6 @@ class AgentTracer:
             "session.id": self.session_id,
         }
         if is_error:
-            # pyrefly: ignore[bad-assignment]
             attrs["error"] = True
             attrs["error.message"] = clean_err or "Tool execution failed"
         else:
